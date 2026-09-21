@@ -9,6 +9,7 @@ from rich.table import Table
 
 from vadibook import align as align_mod
 from vadibook import asr as asr_mod
+from vadibook import build as build_mod
 from vadibook import catalog as catalog_mod
 from vadibook import diarize as diarize_mod
 from vadibook import fetch as fetch_mod
@@ -271,6 +272,26 @@ def run(
             break
         console.print(f"[dim]bekleyen bölümler var, {repeat:.0f} sn sonra yeniden taranacak[/]")
         time.sleep(repeat)
+
+
+@app.command()
+def build(
+    push: bool = typer.Option(False, "--push", help="Meilisearch'e de gönder"),
+    meili_url: str = typer.Option("http://localhost:7700", "--meili-url", envvar="MEILI_URL"),
+    meili_key: str = typer.Option("", "--meili-key", envvar="MEILI_MASTER_KEY"),
+) -> None:
+    """align'ı bitmiş bölümleri SQLite'a yazar; --push ile Meilisearch indeksini günceller."""
+    import sqlite3
+
+    episodes = catalog_mod.load_episodes()
+    stats = build_mod.build_sqlite(episodes)
+    console.print(
+        f"[green]sqlite[/] {stats['episodes']} bölüm, {stats['utterances']} utterance → {build_mod.sqlite_path()}"
+    )
+    if push:
+        conn = sqlite3.connect(build_mod.sqlite_path())
+        n = build_mod.push_meili(meili_url, meili_key, build_mod.meili_docs(conn))
+        console.print(f"[green]meilisearch[/] {n} doküman gönderildi → {meili_url}/indexes/{build_mod.MEILI_INDEX}")
 
 
 @app.command()
