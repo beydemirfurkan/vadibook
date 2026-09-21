@@ -9,7 +9,7 @@ from __future__ import annotations
 import time
 from pathlib import Path
 
-import torch  # noqa: F401  (see module docstring)
+import torch  # imported before faster_whisper on purpose (see module docstring)
 
 from vadibook.models import AsrResult, AsrSegment, Word
 from vadibook.textnorm import normalize_tr
