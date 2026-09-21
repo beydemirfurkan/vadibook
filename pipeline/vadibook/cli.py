@@ -6,11 +6,12 @@ import typer
 from dotenv import load_dotenv
 from rich.console import Console
 
+from vadibook import asr as asr_mod
 from vadibook import catalog as catalog_mod
 from vadibook import fetch as fetch_mod
 from vadibook import state
 from vadibook.models import Episode
-from vadibook.paths import REPO_ROOT
+from vadibook.paths import REPO_ROOT, asr_path, audio_path
 
 load_dotenv(REPO_ROOT / "pipeline" / ".env")
 
@@ -87,6 +88,37 @@ def fetch(
         total = sum(p.duration_sec or 0 for p in updated.parts)
         state.mark_done(e.key, "fetch", parts=len(updated.parts), duration_sec=total)
         console.print(f"[green]{e.id}[/] {len(updated.parts)} parça, {total/60:.1f} dk")
+
+
+@app.command()
+def asr(
+    ep: list[str] = EpOpt, all_: bool = AllOpt, series: str | None = SeriesOpt, force: bool = ForceOpt,
+    model: str = typer.Option("large-v3", help="faster-whisper modeli: large-v3 | large-v3-turbo"),
+    batch_size: int = typer.Option(16, help="Batched inference boyutu (VRAM'e göre)"),
+) -> None:
+    """Sesi faster-whisper ile kelime zamanlı transkript eder → data/private/asr/."""
+    episodes = catalog_mod.load_episodes()
+    for e in select_episodes(episodes, ep, all_, series):
+        if state.is_done(e.key, "asr") and not force:
+            console.print(f"[dim]{e.id} asr atlandı (bitmiş)[/]")
+            continue
+        if not state.is_done(e.key, "fetch"):
+            console.print(f"[yellow]{e.id} asr atlandı: önce fetch[/]")
+            continue
+        try:
+            total_dur = total_elapsed = 0.0
+            for i, _ in enumerate(e.parts, start=1):
+                result = asr_mod.transcribe(audio_path(e.key, i), model_name=model, batch_size=batch_size)
+                asr_path(e.key, i).write_text(result.model_dump_json(), encoding="utf-8")
+                total_dur += result.audio_duration
+                total_elapsed += result.elapsed
+        except Exception as exc:  # noqa: BLE001
+            state.record_error(e.key, "asr", str(exc))
+            console.print(f"[red]{e.id} asr hata:[/] {exc}")
+            continue
+        rtf = total_elapsed / total_dur if total_dur else 0.0
+        state.mark_done(e.key, "asr", model=model, rtf=round(rtf, 4), elapsed=round(total_elapsed, 1))
+        console.print(f"[green]{e.id}[/] asr {total_elapsed/60:.1f} dk, RTF {rtf:.3f} ({1/rtf if rtf else 0:.0f}× gerçek zaman)")
 
 
 if __name__ == "__main__":
