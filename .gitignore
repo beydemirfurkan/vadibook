@@ -1,0 +1,25 @@
+# private pipeline data (audio, transcripts, sqlite) — never committed
+data/private/
+
+# python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+
+# node
+node_modules/
+.next/
+out/
+
+# env / secrets
+.env
+.env.*
+!.env.example
+
+# os / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
