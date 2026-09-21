@@ -8,10 +8,11 @@ from rich.console import Console
 
 from vadibook import asr as asr_mod
 from vadibook import catalog as catalog_mod
+from vadibook import diarize as diarize_mod
 from vadibook import fetch as fetch_mod
 from vadibook import state
 from vadibook.models import Episode
-from vadibook.paths import REPO_ROOT, asr_path, audio_path
+from vadibook.paths import REPO_ROOT, asr_path, audio_path, diar_path
 
 load_dotenv(REPO_ROOT / "pipeline" / ".env")
 
@@ -119,6 +120,37 @@ def asr(
         rtf = total_elapsed / total_dur if total_dur else 0.0
         state.mark_done(e.key, "asr", model=model, rtf=round(rtf, 4), elapsed=round(total_elapsed, 1))
         console.print(f"[green]{e.id}[/] asr {total_elapsed/60:.1f} dk, RTF {rtf:.3f} ({1/rtf if rtf else 0:.0f}× gerçek zaman)")
+
+
+@app.command()
+def diarize(
+    ep: list[str] = EpOpt, all_: bool = AllOpt, series: str | None = SeriesOpt, force: bool = ForceOpt,
+) -> None:
+    """pyannote ile konuşmacı ayrıştırma + konuşmacı embedding'leri → data/private/diar/."""
+    episodes = catalog_mod.load_episodes()
+    for e in select_episodes(episodes, ep, all_, series):
+        if state.is_done(e.key, "diarize") and not force:
+            console.print(f"[dim]{e.id} diarize atlandı (bitmiş)[/]")
+            continue
+        if not state.is_done(e.key, "fetch"):
+            console.print(f"[yellow]{e.id} diarize atlandı: önce fetch[/]")
+            continue
+        try:
+            elapsed = 0.0
+            speakers = 0
+            for i, _ in enumerate(e.parts, start=1):
+                result = diarize_mod.diarize(audio_path(e.key, i))
+                diar_path(e.key, i).write_text(result.model_dump_json(), encoding="utf-8")
+                elapsed += result.elapsed
+                speakers += len({t.speaker for t in result.turns})
+        except Exception as exc:  # noqa: BLE001
+            state.record_error(e.key, "diarize", str(exc))
+            console.print(f"[red]{e.id} diarize hata:[/] {exc}")
+            continue
+        dur = (state.stage_meta(e.key, "fetch") or {}).get("duration_sec") or 0.0
+        rtf = elapsed / dur if dur else 0.0
+        state.mark_done(e.key, "diarize", rtf=round(rtf, 4), elapsed=round(elapsed, 1), speakers=speakers)
+        console.print(f"[green]{e.id}[/] diarize {elapsed/60:.1f} dk, RTF {rtf:.3f}, {speakers} konuşmacı")
 
 
 if __name__ == "__main__":
