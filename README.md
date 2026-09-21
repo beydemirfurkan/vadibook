@@ -1,6 +1,6 @@
 # vadibook
 
-kurtlar vadisi'nin bütün bölümleri, aranabilir.
+kurtlar vadisi'nin bütün bölümleri, aranabilir: **[vadibook.beydemir.dev](https://vadibook.beydemir.dev)**
 
 397 bölüm. yüzbinlerce replik. bir isim yaz, bir cümle yaz, bir örgüt yaz; kim ne zaman demiş görürsün, tıklarsın, youtube'da tam o saniyeye gidersin.
 
@@ -34,7 +34,7 @@ konuşmacı etiketleri otomatik ve yer yer yanlış. karakter isimleri geldiğin
 ## durum
 
 - ses ve transkript üretimi sürüyor, 397 bölümün hepsi kataloglandı
-- site çalışıyor, canlı adres yakında
+- site yayında: [vadibook.beydemir.dev](https://vadibook.beydemir.dev)
 - karakter isimleri (polat, memati, abdülhey…) bir sonraki adım
 - ilişki grafiği ve "dosya" sayfaları onun ardından
 
