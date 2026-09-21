@@ -21,7 +21,7 @@ let db: Database.Database | null = null;
 
 function open(): Database.Database {
   if (!db) {
-    const file = path.resolve(process.cwd(), process.env.VADIBOOK_SQLITE ?? "../data/private/vadibook.sqlite");
+    const file = path.resolve(/* turbopackIgnore: true */ process.cwd(), process.env.VADIBOOK_SQLITE ?? "../data/private/vadibook.sqlite");
     db = new Database(file, { readonly: true, fileMustExist: true });
   }
   return db;
