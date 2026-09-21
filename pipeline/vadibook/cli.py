@@ -171,8 +171,7 @@ def align(
             utts = align_mod.align_episode(e)
             with utterances_path(e.key).open("w", encoding="utf-8") as fh:
                 for u in utts:
-                    fh.write(u.model_dump_json() + "
-")
+                    fh.write(u.model_dump_json() + "\n")
         except Exception as exc:  # noqa: BLE001
             state.record_error(e.key, "align", str(exc))
             console.print(f"[red]{e.id} align hata:[/] {exc}")
