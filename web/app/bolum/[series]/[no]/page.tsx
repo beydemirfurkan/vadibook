@@ -46,21 +46,25 @@ export default async function EpisodePage({ params }: { params: Params }) {
         </dl>
       </header>
 
-      <section className="rise" style={{ animationDelay: "80ms" }}>
-        <div className="aspect-video w-full border border-line-2 bg-black shadow-[0_30px_60px_-30px_rgba(0,0,0,0.9)]">
-          <iframe
-            className="h-full w-full"
-            src={`https://www.youtube-nocookie.com/embed/${ep.yt_id}`}
-            title={`${seriesName(ep.series)} ${ep.no}. Bölüm — resmi yükleme`}
-            allow="accelerometer; encrypted-media; picture-in-picture"
-            allowFullScreen
-            loading="lazy"
-          />
+      <figure className="rise" style={{ animationDelay: "80ms" }}>
+        <div className="cinema-bezel">
+          <div className="cinema-screen aspect-video w-full">
+            <iframe
+              className="h-full w-full"
+              src={`https://www.youtube-nocookie.com/embed/${ep.yt_id}`}
+              title={`${seriesName(ep.series)} ${ep.no}. Bölüm — resmi yükleme`}
+              allow="accelerometer; encrypted-media; picture-in-picture"
+              allowFullScreen
+              loading="lazy"
+            />
+          </div>
         </div>
-        <p className="mt-2 font-mono text-[0.68rem] uppercase tracking-[0.12em] text-fg-3">
-          Resmi Pana Film yüklemesi · sesi ve görüntüyü biz barındırmıyoruz
-        </p>
-      </section>
+        <figcaption className="plaque">
+          <span>
+            {seriesName(ep.series)} · {ep.no}. Bölüm · Resmi Pana Film yüklemesi
+          </span>
+        </figcaption>
+      </figure>
 
       <section className="space-y-4 rise" style={{ animationDelay: "160ms" }}>
         <h2 className="steel-text font-display text-2xl">Bu Bölümde Ara</h2>

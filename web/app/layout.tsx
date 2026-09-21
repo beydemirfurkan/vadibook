@@ -28,6 +28,9 @@ export const metadata: Metadata = {
   title: { default: "vadibook — Kurtlar Vadisi arşivi", template: "%s · vadibook" },
   description:
     "Kurtlar Vadisi'nin 397 bölümündeki her konuşmayı arayın, resmi YouTube yüklemesinde tam o saniyeye gidin.",
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"),
+  openGraph: { type: "website", locale: "tr_TR", siteName: "vadibook" },
+  twitter: { card: "summary_large_image" },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

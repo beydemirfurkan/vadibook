@@ -261,10 +261,58 @@ body > * {
     linear-gradient(180deg, transparent 0%, transparent 60%, rgba(5, 7, 13, 0.75) 100%);
 }
 
+
+/* soft light shafts falling from the moon through the mist, breathing slowly */
+.shaft {
+  position: absolute;
+  top: calc(6vh + 4vw);
+  right: calc(10vw + 2vw);
+  width: 9vw;
+  height: 110vh;
+  transform-origin: 50% 0;
+  background: linear-gradient(180deg, rgba(214, 226, 255, 0.16) 0%, rgba(214, 226, 255, 0.05) 40%, transparent 80%);
+  filter: blur(22px);
+  mix-blend-mode: screen;
+  animation: breathe 14s ease-in-out infinite;
+  will-change: opacity;
+}
+
+.shaft-1 {
+  transform: rotate(26deg);
+}
+
+.shaft-2 {
+  transform: rotate(40deg);
+  width: 6vw;
+  animation-delay: -6s;
+}
+
+@keyframes breathe {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* the wolf stands on the far-ridge peak (1160/1440 of the width, 150/320 of the ridge height) */
+.wolf {
+  position: absolute;
+  left: 78.6vw;
+  bottom: calc(22.22vw * (170 / 320) - 0.15vw);
+  width: 3.6vw;
+  min-width: 34px;
+  height: auto;
+  filter: drop-shadow(0 0 6px rgba(214, 226, 255, 0.25));
+}
+
 @media (prefers-reduced-motion: reduce) {
   .stars,
   .deck,
-  .fog {
+  .fog,
+  .shaft {
     animation: none;
   }
 }
@@ -445,4 +493,70 @@ mark {
 
 .tabular {
   font-variant-numeric: tabular-nums;
+}
+
+/* cinema frame for the official embed: brushed-steel bezel, moon glow, name plaque */
+.cinema-bezel {
+  padding: 6px;
+  border-radius: 5px;
+  background: linear-gradient(180deg, #eef2f9 0%, #aab5c8 18%, #5d6a80 46%, #2a3346 54%, #0e1424 100%);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5),
+    0 50px 90px -40px rgba(0, 0, 0, 0.95),
+    0 0 90px -30px var(--moon-glow);
+}
+
+.cinema-screen {
+  border-radius: 2px;
+  overflow: hidden;
+  background: #000;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.9);
+}
+
+.plaque {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.9rem;
+  margin-top: 0.9rem;
+  padding: 0.45rem 1rem;
+  font-family: var(--font-mono), monospace;
+  font-size: 0.64rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--steel);
+  background: linear-gradient(180deg, #1a2236, #0b1120);
+  border: 1px solid var(--line-2);
+  border-radius: 2px;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    0 10px 24px -14px rgba(0, 0, 0, 0.9);
+}
+
+/* the two screws on the plaque */
+.plaque::before,
+.plaque::after {
+  content: "";
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #e8edf6, #6d7a90 70%, #2a3346);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.6);
+}
+
+/* result-list skeleton while a search is in flight */
+.skeleton {
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.1) 50%, rgba(255, 255, 255, 0.04) 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.6s linear infinite;
+  border-radius: 2px;
+}
+
+@keyframes shimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
 }
