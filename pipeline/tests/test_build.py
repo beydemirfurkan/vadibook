@@ -39,7 +39,7 @@ def test_build_sqlite_ingests_only_aligned_episodes_and_is_idempotent(data_root)
     conn = sqlite3.connect(build.sqlite_path())
     assert conn.execute("select count(*) from utterances").fetchone()[0] == 2
     row = conn.execute("select id, ep_key, part, speaker, yt_url from utterances order by idx").fetchone()
-    assert row == ("pusu-001:000000", "pusu-001", 1, "p1:SPEAKER_00", "https://youtu.be/abc?t=1")
+    assert row == ("pusu-001_000000", "pusu-001", 1, "p1:SPEAKER_00", "https://youtu.be/abc?t=1")
     ep_row = conn.execute("select series, no, yt_id, duration_sec from episodes").fetchone()
     assert ep_row == ("pusu", 1, "abc", 100.0)
 
@@ -53,12 +53,12 @@ def test_meili_docs_shape(data_root):
     conn = sqlite3.connect(build.sqlite_path())
     docs = list(build.meili_docs(conn))
     assert docs[0] == {
-        "id": "pusu-001:000000", "series": "pusu", "ep": 1, "ep_key": "pusu-001", "part": 1,
+        "id": "pusu-001_000000", "series": "pusu", "ep": 1, "ep_key": "pusu-001", "part": 1,
         "start": 1.0, "end": 2.0, "speaker": "p1:SPEAKER_00", "text": "Kaşifoğlu nerede",
-        "text_ascii": "kaşifoğlu nerede", "yt_url": "https://youtu.be/abc?t=1",
+        "yt_url": "https://youtu.be/abc?t=1",
     }
 
 
 def test_meili_settings_do_not_search_ids():
-    assert set(build.MEILI_SETTINGS["searchableAttributes"]) == {"text", "text_ascii"}
+    assert build.MEILI_SETTINGS["searchableAttributes"] == ["text"]
     assert "ep_key" in build.MEILI_SETTINGS["filterableAttributes"]

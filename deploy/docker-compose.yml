@@ -1,0 +1,15 @@
+services:
+  meilisearch:
+    image: getmeili/meilisearch:v1.15
+    environment:
+      MEILI_MASTER_KEY: ${MEILI_MASTER_KEY}
+      MEILI_ENV: ${MEILI_ENV:-development}
+      MEILI_NO_ANALYTICS: "true"
+    ports:
+      - "127.0.0.1:7700:7700"
+    volumes:
+      - meili_data:/meili_data
+    restart: unless-stopped
+
+volumes:
+  meili_data:

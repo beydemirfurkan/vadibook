@@ -16,8 +16,10 @@ from vadibook.models import Episode, Utterance
 from vadibook.paths import data_root, utterances_path
 
 MEILI_INDEX = "utterances"
+# Meilisearch's tokenizer already folds Turkish diacritics (Kaşifoğlu == kasifoglu, ısı == isi),
+# so only `text` is indexed; the SQLite text_norm/text_ascii columns stay for the web app's own use.
 MEILI_SETTINGS: dict = {
-    "searchableAttributes": ["text", "text_ascii"],
+    "searchableAttributes": ["text"],
     "filterableAttributes": ["series", "ep", "ep_key", "speaker"],
     "sortableAttributes": ["ep", "start"],
     "pagination": {"maxTotalHits": 5000},
@@ -67,8 +69,9 @@ def build_sqlite(episodes: list[Episode]) -> dict:
             for line in fh:
                 u = Utterance.model_validate_json(line)
                 part = _part_no(u)
+                # Meilisearch document ids allow only [a-zA-Z0-9_-], so no colon here.
                 rows.append((
-                    f"{ep.key}:{u.idx:06d}", ep.key, u.idx, part, u.start, u.end, u.speaker,
+                    f"{ep.key}_{u.idx:06d}", ep.key, u.idx, part, u.start, u.end, u.speaker,
                     u.text, u.text_norm, u.text_ascii, yt_url(ep, part, u.start),
                 ))
         with conn:
@@ -90,13 +93,13 @@ def build_sqlite(episodes: list[Episode]) -> dict:
 
 def meili_docs(conn: sqlite3.Connection) -> Iterator[dict]:
     q = (
-        "select u.id, e.series, e.no, u.ep_key, u.part, u.start, u.end, u.speaker, u.text, u.text_ascii, u.yt_url "
+        "select u.id, e.series, e.no, u.ep_key, u.part, u.start, u.end, u.speaker, u.text, u.yt_url "
         "from utterances u join episodes e on e.key = u.ep_key order by u.ep_key, u.idx"
     )
     for r in conn.execute(q):
         yield {
             "id": r[0], "series": r[1], "ep": r[2], "ep_key": r[3], "part": r[4], "start": r[5], "end": r[6],
-            "speaker": r[7], "text": r[8], "text_ascii": r[9], "yt_url": r[10],
+            "speaker": r[7], "text": r[8], "yt_url": r[9],
         }
 
 
