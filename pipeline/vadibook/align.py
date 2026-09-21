@@ -5,6 +5,7 @@ from __future__ import annotations
 import bisect
 import re
 
+from vadibook.asr import filter_segments
 from vadibook.models import AsrResult, DiarResult, DiarTurn, Episode, Utterance, Word
 from vadibook.paths import asr_path, diar_path
 from vadibook.textnorm import normalize_tr, to_ascii
@@ -13,8 +14,9 @@ _SPACES = re.compile(r"\s+")
 
 
 def words_from_asr(asr: AsrResult) -> list[Word]:
+    """Flatten kept segments to words (hallucination/silence filter is applied here, not in `asr`)."""
     words: list[Word] = []
-    for seg in asr.segments:
+    for seg in filter_segments(asr.segments):
         if seg.words:
             words.extend(seg.words)
         else:  # defensive: whisper occasionally emits a segment without word timings

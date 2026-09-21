@@ -27,7 +27,7 @@ EpOpt = typer.Option([], "--ep", help="Bölüm id'si, tekrarlanabilir: --ep pusu
 AllOpt = typer.Option(False, "--all", help="Katalogdaki tüm bölümler")
 SeriesOpt = typer.Option(None, "--series", help="Sadece bu seri: kv | pusu")
 ForceOpt = typer.Option(False, "--force", help="Bitmiş aşamayı yeniden çalıştır")
-ModelOpt = typer.Option("large-v3", "--model", help="faster-whisper modeli: large-v3 | large-v3-turbo")
+ModelOpt = typer.Option("large-v3-turbo", "--model", help="faster-whisper modeli: large-v3-turbo (varsayılan) | large-v3")
 BatchOpt = typer.Option(16, "--batch-size", help="Batched inference boyutu (VRAM'e göre)")
 SleepOpt = typer.Option(5.0, "--sleep", help="İndirmeler arası bekleme (sn), YouTube throttling'e karşı")
 

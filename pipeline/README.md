@@ -20,7 +20,7 @@ uv run python -c "import torch; print(torch.cuda.is_available())"   # True olmal
 uv run vadibook catalog                      # playlist → data/public/episodes.json (+ eksik raporu)
 uv run vadibook run --ep pusu/1              # tek bölüm: fetch → asr → diarize → align
 uv run vadibook run --series pusu            # bir seri; kesilirse tekrar çalıştır, kaldığı yerden devam eder
-uv run vadibook asr --ep pusu/1 --model large-v3-turbo --force
+uv run vadibook asr --ep pusu/1 --model large-v3 --force   # varsayılan large-v3-turbo
 uv run vadibook status
 uv run pytest
 ```

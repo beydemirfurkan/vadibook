@@ -64,3 +64,13 @@ def test_words_from_asr_falls_back_to_segment_when_no_words():
     words = align.words_from_asr(asr)
     assert [x.word for x in words] == [" Selam", " Naber"]
     assert (words[1].start, words[1].end) == (1.0, 2.0)
+
+
+def test_words_from_asr_applies_hallucination_filter():
+    asr = AsrResult(model="m", audio_duration=5, elapsed=1, segments=[
+        AsrSegment(start=0, end=1, text=" Selam", avg_logprob=-0.1, no_speech_prob=0.0, compression_ratio=1.0,
+                   words=[w(" Selam", 0.0, 1.0)]),
+        AsrSegment(start=1, end=2, text=" Altyazı M.K.", avg_logprob=-0.9, no_speech_prob=0.8, compression_ratio=1.0,
+                   words=[w(" Altyazı", 1.0, 1.5), w(" M.K.", 1.5, 2.0)]),
+    ])
+    assert [x.word for x in align.words_from_asr(asr)] == [" Selam"]
