@@ -35,7 +35,7 @@ export function SearchBox({ initialQuery = "", series, ep, size = "compact", pla
       <label htmlFor={id} className="sr-only">
         Diyaloglarda ara
       </label>
-      <div className={`flex items-end gap-3 ${hero ? "flex-col sm:flex-row" : ""}`}>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
         <input
           id={id}
           name="q"
@@ -44,14 +44,15 @@ export function SearchBox({ initialQuery = "", series, ep, size = "compact", pla
           onChange={(e) => setQ(e.target.value)}
           autoFocus={autoFocus}
           autoComplete="off"
+          enterKeyHint="search"
           maxLength={200}
           placeholder={placeholder ?? "bir isim, bir cümle, bir örgüt…"}
-          className={`rule-input w-full font-body ${hero ? "text-2xl sm:text-4xl py-2" : "text-lg py-1"}`}
+          className={`rule-input w-full font-body ${hero ? "text-2xl sm:text-4xl py-2" : "text-xl py-2"}`}
         />
         <button
           type="submit"
-          className={`btn-accent shrink-0 font-display uppercase tracking-[0.2em] ${
-            hero ? "text-sm px-7 py-3 self-end" : "text-[0.7rem] px-4 py-2"
+          className={`btn-accent min-h-11 shrink-0 font-display uppercase tracking-[0.2em] ${
+            hero ? "text-sm px-7 py-3" : "text-xs px-5 py-2.5"
           }`}
         >
           Ara

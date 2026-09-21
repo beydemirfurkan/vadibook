@@ -3,7 +3,7 @@ import Link from "next/link";
 import { ResultCard } from "@/components/ResultCard";
 import { SearchBox } from "@/components/SearchBox";
 import { isSeries, seriesName, type Series } from "@/lib/format";
-import { HITS_PER_PAGE, MAX_QUERY_LEN, search } from "@/lib/search";
+import { MAX_QUERY_LEN, search } from "@/lib/search";
 
 type SP = { q?: string; series?: string; ep?: string; page?: string };
 type Props = { searchParams: Promise<SP> };
@@ -47,8 +47,8 @@ export default async function SearchPage({ searchParams }: Props) {
     <div className="space-y-8">
       <SearchBox initialQuery={q} series={series} ep={ep} size="hero" />
 
-      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-line pb-3">
-        <ul className="flex gap-1 font-mono text-[0.7rem] uppercase tracking-[0.12em]">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line pb-3">
+        <ul className="flex flex-wrap gap-1" aria-label="Seri filtresi">
           {(
             [
               [undefined, "Tümü"],
@@ -59,29 +59,33 @@ export default async function SearchPage({ searchParams }: Props) {
             <li key={label}>
               <Link
                 href={hrefFor({ series: s })}
-                className={`inline-block px-3 py-1 ${series === s ? "bg-steel text-bg" : "text-fg-2 hover:text-moon"}`}
+                aria-current={series === s ? "true" : undefined}
+                className={`navlink ${series === s ? "bg-steel text-bg hover:text-bg" : ""}`}
               >
                 {label}
               </Link>
             </li>
           ))}
           {ep !== undefined && series && (
-            <li className="px-3 py-1 text-accent-2">
-              {seriesName(series)} · {ep}. Bölüm{" "}
-              <Link href={`/ara?q=${encodeURIComponent(q)}`} className="ml-1 text-fg-3 hover:text-moon" aria-label="Bölüm filtresini kaldır">
-                ×
+            <li>
+              <Link
+                href={`/ara?q=${encodeURIComponent(q)}`}
+                className="navlink text-accent-2"
+                aria-label={`${seriesName(series)} ${ep}. bölüm filtresini kaldır`}
+              >
+                {ep}. Bölüm ×
               </Link>
             </li>
           )}
         </ul>
         {result && (
-          <p className="font-mono text-[0.7rem] uppercase tracking-[0.12em] text-fg-3">
+          <p className="eyebrow" role="status">
             {nf.format(result.total)} sonuç · {result.ms} ms
           </p>
         )}
       </div>
 
-      {!q && <p className="font-body text-fg-2">Aramak için bir şey yaz.</p>}
+      {!q && <p className="font-body text-lg text-fg-2">Aramak için bir şey yaz.</p>}
 
       {result && result.hits.length === 0 && (
         <div className="space-y-2 py-10 text-center">
@@ -103,19 +107,19 @@ export default async function SearchPage({ searchParams }: Props) {
       )}
 
       {result && result.pages > 1 && (
-        <nav className="flex items-center justify-between font-mono text-[0.7rem] uppercase tracking-[0.12em]" aria-label="Sayfalar">
+        <nav className="flex items-center justify-between gap-3" aria-label="Sayfalar">
           {page > 1 ? (
-            <Link href={hrefFor({ page: page - 1 })} className="text-fg-2 hover:text-moon">
+            <Link href={hrefFor({ page: page - 1 })} className="navlink" rel="prev">
               ← Önceki
             </Link>
           ) : (
             <span />
           )}
-          <span className="text-fg-3">
-            Sayfa {page} / {result.pages} · {HITS_PER_PAGE}&rsquo;lik
+          <span className="eyebrow">
+            Sayfa {page} / {result.pages}
           </span>
           {page < result.pages ? (
-            <Link href={hrefFor({ page: page + 1 })} className="text-fg-2 hover:text-moon">
+            <Link href={hrefFor({ page: page + 1 })} className="navlink" rel="next">
               Sonraki →
             </Link>
           ) : (

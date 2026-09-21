@@ -2,8 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { SearchBox } from "@/components/SearchBox";
-import { SpeakerTimeline } from "@/components/SpeakerTimeline";
-import { adjacentEpisodes, episodeStats, getEpisode, speakerTimeline } from "@/lib/db";
+import { adjacentEpisodes, episodeStats, getEpisode, mentionCounts } from "@/lib/db";
 import { episodeHref, fmtTime, isSeries, seriesName } from "@/lib/format";
 
 type Params = Promise<{ series: string; no: string }>;
@@ -16,11 +15,11 @@ async function load(params: Params) {
 
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
   const ep = await load(params);
-  if (!ep) return { title: "Bölüm bulunamadı" };
+  if (!ep) return { title: "bölüm bulunamadı" };
   const name = seriesName(ep.series);
   return {
-    title: `${name} ${ep.no}. bölüm — kim ne zaman konuştu, bölüm içi arama`,
-    description: `${name} ${ep.no}. bölüm: konuşmacı zaman çizelgesi, bölümde geçen herhangi bir repliği ara, resmi youtube yüklemesinde tam o saniyeye git.`,
+    title: `${name} ${ep.no}. bölüm — kimler anılıyor, bölüm içi arama`,
+    description: `${name} ${ep.no}. bölüm: bu bölümde adı geçen karakterler ve örgütler, bölümde geçen herhangi bir repliği ara, resmi youtube yüklemesinde tam o saniyeye git.`,
     alternates: { canonical: `/bolum/${ep.series}/${ep.no}` },
     openGraph: { title: `${name} ${ep.no}. bölüm · vadibook`, type: "video.episode" },
   };
@@ -31,21 +30,21 @@ export default async function EpisodePage({ params }: { params: Params }) {
   if (!ep) notFound();
 
   const stats = episodeStats(ep.key);
-  const turns = speakerTimeline(ep.key);
+  const mentions = mentionCounts(ep.key);
   const { prev, next } = adjacentEpisodes(ep.series, ep.no);
   const nf = new Intl.NumberFormat("tr-TR");
+  const searchHref = (q: string) => `/ara?${new URLSearchParams({ q, series: ep.series, ep: String(ep.no) })}`;
 
   return (
-    <div className="space-y-10">
-      <header className="rise space-y-4">
-        <p className="font-mono text-[0.7rem] uppercase tracking-[0.14em] text-fg-3">{seriesName(ep.series)}</p>
-        <h1 className="steel-text font-display text-[2.4rem] leading-tight sm:text-5xl">{ep.no}. Bölüm</h1>
-        <dl className="flex flex-wrap gap-x-8 gap-y-2 font-mono text-[0.72rem] uppercase tracking-[0.12em] text-fg-2">
-          <Item k="Süre" v={fmtTime(ep.duration_sec)} />
-          <Item k="Konuşma" v={nf.format(stats.utterances)} />
-          <Item k="Diyalog" v={`${Math.round(stats.spokenSec / 60)} dk`} />
-          <Item k="Konuşmacı" v={String(stats.speakers)} />
-          {ep.parts.length > 1 && <Item k="Parça" v={String(ep.parts.length)} />}
+    <div className="space-y-10 sm:space-y-12">
+      <header className="rise space-y-3">
+        <p className="eyebrow">{seriesName(ep.series)}</p>
+        <h1 className="steel-text font-display text-4xl leading-tight sm:text-5xl">{ep.no}. Bölüm</h1>
+        <dl className="flex flex-wrap gap-x-6 gap-y-1 font-mono text-sm text-fg-2">
+          <Item k="süre" v={fmtTime(ep.duration_sec)} />
+          <Item k="konuşma" v={nf.format(stats.utterances)} />
+          <Item k="diyalog" v={`${Math.round(stats.spokenSec / 60)} dk`} />
+          {ep.parts.length > 1 && <Item k="parça" v={String(ep.parts.length)} />}
         </dl>
       </header>
 
@@ -63,39 +62,50 @@ export default async function EpisodePage({ params }: { params: Params }) {
           </div>
         </div>
         <figcaption className="plaque">
-          <span>
-            {seriesName(ep.series)} · {ep.no}. Bölüm · Resmi Pana Film yüklemesi
-          </span>
+          <span>{ep.no}. Bölüm · Resmi Pana Film yüklemesi</span>
         </figcaption>
       </figure>
 
-      <section className="space-y-4 rise" style={{ animationDelay: "160ms" }}>
-        <h2 className="steel-text font-display text-2xl">Bu Bölümde Ara</h2>
+      <section className="space-y-4 rise" style={{ animationDelay: "160ms" }} aria-labelledby="ara-baslik">
+        <h2 id="ara-baslik" className="steel-text font-display text-2xl">
+          Bu Bölümde Ara
+        </h2>
         <SearchBox series={ep.series} ep={ep.no} placeholder="bu bölümde geçen bir kelime…" />
       </section>
 
-      <section className="space-y-4 rise" style={{ animationDelay: "240ms" }}>
-        <div className="flex items-baseline justify-between">
-          <h2 className="steel-text font-display text-2xl">Kim Ne Zaman Konuştu</h2>
-          <p className="font-mono text-[0.68rem] uppercase tracking-[0.12em] text-fg-3">
-            en çok konuşan 12 · etiketler otomatik
-          </p>
-        </div>
-        <div className="card p-4">
-          <SpeakerTimeline turns={turns} duration={ep.duration_sec} />
-        </div>
-      </section>
+      {mentions.length > 0 && (
+        <section className="space-y-4 rise" style={{ animationDelay: "240ms" }} aria-labelledby="anilan-baslik">
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <h2 id="anilan-baslik" className="steel-text font-display text-2xl">
+              Bu Bölümde Adı Geçenler
+            </h2>
+            <p className="eyebrow">kaç kez anıldı · tıkla, o bölümde ara</p>
+          </div>
+          <ul className="flex flex-wrap gap-2" aria-label="Bu bölümde adı geçen karakterler ve örgütler">
+            {mentions.map((m) => (
+              <li key={m.name}>
+                <Link href={searchHref(m.name)} className="chip">
+                  <span>{m.name}</span>
+                  <span className="chip-count" aria-label={`${m.count} kez`}>
+                    {m.count}
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
-      <nav className="flex items-center justify-between border-t border-line pt-4 font-mono text-[0.7rem] uppercase tracking-[0.12em]" aria-label="Bölümler arası">
+      <nav className="flex items-center justify-between gap-4 border-t border-line pt-4" aria-label="Önceki ve sonraki bölüm">
         {prev ? (
-          <Link href={episodeHref(prev.series, prev.no)} className="text-fg-2 hover:text-moon">
+          <Link href={episodeHref(prev.series, prev.no)} className="navlink">
             ← {prev.no}. Bölüm
           </Link>
         ) : (
           <span />
         )}
         {next ? (
-          <Link href={episodeHref(next.series, next.no)} className="text-fg-2 hover:text-moon">
+          <Link href={episodeHref(next.series, next.no)} className="navlink">
             {next.no}. Bölüm →
           </Link>
         ) : (

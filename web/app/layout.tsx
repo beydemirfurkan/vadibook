@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import Link from "next/link";
 import { Cinzel, Cormorant_Garamond, IBM_Plex_Mono } from "next/font/google";
 import { Disclaimer } from "@/components/Disclaimer";
@@ -9,6 +9,7 @@ const cinzel = Cinzel({
   variable: "--font-cinzel",
   subsets: ["latin", "latin-ext"],
   weight: ["400", "500", "600", "700"],
+  display: "swap",
 });
 
 const cormorant = Cormorant_Garamond({
@@ -16,15 +17,24 @@ const cormorant = Cormorant_Garamond({
   subsets: ["latin", "latin-ext"],
   weight: ["400", "500", "600"],
   style: ["normal", "italic"],
+  display: "swap",
 });
 
 const plexMono = IBM_Plex_Mono({
   variable: "--font-plex-mono",
   subsets: ["latin", "latin-ext"],
   weight: ["400", "500"],
+  display: "swap",
 });
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+
+export const viewport: Viewport = {
+  themeColor: "#05070d",
+  colorScheme: "dark",
+  width: "device-width",
+  initialScale: 1,
+};
 
 export const metadata: Metadata = {
   title: {
@@ -58,24 +68,29 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="tr" className={`${cinzel.variable} ${cormorant.variable} ${plexMono.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col">
+        <a href="#icerik" className="skip-link">
+          İçeriğe atla
+        </a>
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
         <NightSky />
 
         <header className="border-b border-line bg-bg/40 backdrop-blur-sm">
-          <div className="mx-auto flex w-full max-w-5xl items-center justify-between gap-6 px-4 py-4 sm:px-6">
-            <Link href="/" className="flex items-center gap-4">
-              <span className="steel-text font-display text-2xl font-semibold tracking-[0.08em]">VADİBOOK</span>
-              <span className="badge hidden sm:inline-block">Dosya No. 397</span>
+          <div className="mx-auto flex w-full max-w-5xl items-center justify-between gap-4 px-4 py-2 sm:px-6">
+            <Link href="/" className="flex min-h-11 items-center gap-4" aria-label="vadibook ana sayfa">
+              <span className="steel-text font-display text-xl font-semibold tracking-[0.08em] sm:text-2xl">VADİBOOK</span>
+              <span className="badge hidden sm:inline-block" aria-hidden>
+                Dosya No. 397
+              </span>
             </Link>
-            <nav className="flex items-center gap-6 font-mono text-[0.68rem] uppercase tracking-[0.16em] text-fg-2">
-              <Link href="/ara" className="hover:text-moon">
+            <nav aria-label="Site" className="flex items-center gap-1 sm:gap-3">
+              <Link href="/ara" className="navlink">
                 Ara
               </Link>
-              <Link href="/#bolumler" className="hover:text-moon">
+              <Link href="/#bolumler" className="navlink">
                 Bölümler
               </Link>
               {process.env.NEXT_PUBLIC_REPO_URL && (
-                <a href={process.env.NEXT_PUBLIC_REPO_URL} className="hover:text-moon" rel="noopener noreferrer">
+                <a href={process.env.NEXT_PUBLIC_REPO_URL} className="navlink" rel="noopener noreferrer">
                   GitHub
                 </a>
               )}
@@ -83,14 +98,16 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           </div>
         </header>
 
-        <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-10 sm:px-6">{children}</main>
+        <main id="icerik" className="mx-auto w-full max-w-5xl flex-1 px-4 py-8 sm:px-6 sm:py-10">
+          {children}
+        </main>
 
         <footer className="border-t border-line bg-bg/60 backdrop-blur-sm">
-          <div className="mx-auto w-full max-w-5xl px-4 py-6 sm:px-6 space-y-3">
+          <div className="mx-auto w-full max-w-5xl space-y-3 px-4 py-6 sm:px-6">
             <Disclaimer />
-            <p className="font-mono text-[0.66rem] uppercase tracking-[0.14em] text-fg-3">
-              Açık kaynak · transkriptler yerel Whisper ile üretilir · konuşmacı etiketleri otomatiktir ve
-              hata içerebilir
+            <p className="font-mono text-xs leading-relaxed text-fg-3">
+              açık kaynak · transkriptler yerel whisper ile üretilir · konuşmacı etiketleri otomatiktir ve hata
+              içerebilir
             </p>
           </div>
         </footer>

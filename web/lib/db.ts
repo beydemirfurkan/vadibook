@@ -2,6 +2,7 @@ import "server-only";
 import Database from "better-sqlite3";
 import path from "node:path";
 import type { Series } from "./format";
+import { NAMES } from "./names";
 
 export type Part = { yt_id: string; title: string; offset_sec: number; duration_sec: number | null };
 export type EpisodeRow = {
@@ -60,6 +61,24 @@ export function episodeStats(key: string): EpisodeStats {
 /** Speaker turns without any text — safe to ship to the browser. */
 export function speakerTimeline(key: string): TimelineTurn[] {
   return open().prepare("select speaker, start, end from utterances where ep_key = ? order by start").all(key) as TimelineTurn[];
+}
+
+export type Mention = { name: string; kind: "character" | "org"; count: number };
+
+/** How often each dictionary name is spoken in an episode (word-prefix match on ASCII-folded text). */
+export function mentionCounts(key: string): Mention[] {
+  const stmt = open().prepare(
+    "select count(*) as n from utterances where ep_key = ? and (' ' || text_ascii || ' ') like ?",
+  );
+  const out: Mention[] = [];
+  for (const entry of NAMES) {
+    let count = 0;
+    for (const tok of entry.tokens) {
+      count += (stmt.get(key, `% ${tok}%`) as { n: number }).n;
+    }
+    if (count > 0) out.push({ name: entry.name, kind: entry.kind, count });
+  }
+  return out.sort((a, b) => b.count - a.count);
 }
 
 export function corpusStats(): CorpusStats {

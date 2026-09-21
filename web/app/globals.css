@@ -9,9 +9,9 @@
   --bg: #05070d;
   --bg-2: #0a1020;
   --bg-3: #111a2e;
-  --fg: #e6ebf4;
-  --fg-2: #a9b3c6;
-  --fg-3: #6b7689;
+  --fg: #eef2f9;
+  --fg-2: #b6c0d3;
+  --fg-3: #8d98ad;
   --line: rgba(170, 186, 214, 0.18);
   --line-2: rgba(170, 186, 214, 0.34);
   --steel: #c7d0dd;
@@ -403,8 +403,8 @@ mark {
 /* small steel plaque badge */
 .badge {
   font-family: var(--font-mono), monospace;
-  font-size: 0.66rem;
-  letter-spacing: 0.16em;
+  font-size: 0.78rem;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--steel);
   border: 1px solid var(--line-2);
@@ -519,10 +519,10 @@ mark {
   align-items: center;
   gap: 0.9rem;
   margin-top: 0.9rem;
-  padding: 0.45rem 1rem;
+  padding: 0.5rem 1rem;
   font-family: var(--font-mono), monospace;
-  font-size: 0.64rem;
-  letter-spacing: 0.18em;
+  font-size: 0.78rem;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--steel);
   background: linear-gradient(180deg, #1a2236, #0b1120);
@@ -558,5 +558,167 @@ mark {
   }
   to {
     background-position: -200% 0;
+  }
+}
+
+/* --- accessibility & mobile ------------------------------------------------ */
+
+/* visible keyboard focus everywhere, moonlight ring */
+:focus-visible {
+  outline: 2px solid var(--moon);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+.rule-input:focus-visible {
+  outline: none; /* the underline + glow already marks focus */
+}
+
+.skip-link {
+  position: absolute;
+  left: 1rem;
+  top: -4rem;
+  z-index: 50;
+  padding: 0.6rem 1rem;
+  background: var(--moon);
+  color: var(--bg);
+  font-family: var(--font-mono), monospace;
+  font-size: 0.85rem;
+  transition: top 0.15s;
+}
+
+.skip-link:focus {
+  top: 1rem;
+}
+
+/* small caps meta label: never below 12px, readable letter-spacing */
+.eyebrow {
+  font-family: var(--font-mono), monospace;
+  font-size: 0.78rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--fg-3);
+}
+
+/* 44px-tall tappable chips and nav links */
+.chip,
+.navlink {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-height: 44px;
+  padding: 0 0.9rem;
+  border: 1px solid var(--line-2);
+  border-radius: 3px;
+  font-family: var(--font-body), Georgia, serif;
+  font-size: 1.05rem;
+  color: var(--fg);
+  text-decoration: none;
+  transition:
+    border-color 0.2s,
+    background-color 0.2s;
+}
+
+.chip:hover,
+.navlink:hover {
+  border-color: var(--steel);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.chip-count {
+  font-family: var(--font-mono), monospace;
+  font-size: 0.8rem;
+  color: var(--fg-2);
+  padding-left: 0.6rem;
+  border-left: 1px solid var(--line);
+}
+
+.navlink {
+  font-family: var(--font-mono), monospace;
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border-color: transparent;
+  padding: 0 0.4rem;
+  color: var(--fg-2);
+}
+
+.navlink:hover {
+  background: transparent;
+  color: var(--moon);
+}
+
+/* phones: drop the expensive layers, keep the mood */
+@media (max-width: 640px) {
+  html {
+    font-size: 16px;
+  }
+
+  .deck-lit,
+  .shaft,
+  .stars-3 {
+    display: none;
+  }
+
+  .deck-high,
+  .deck-mid,
+  .fog {
+    filter: none;
+  }
+
+  .deck-mid {
+    opacity: 0.45;
+  }
+
+  .moon {
+    top: 4vh;
+    right: 6vw;
+    width: 72px;
+    box-shadow:
+      0 0 30px 10px rgba(225, 234, 255, 0.4),
+      0 0 120px 40px rgba(160, 180, 230, 0.18);
+  }
+
+  .moon::before {
+    display: none;
+  }
+
+  .wolf {
+    display: none;
+  }
+
+  .card {
+    backdrop-filter: none;
+    background: rgba(12, 18, 34, 0.88);
+  }
+
+  .cinema-bezel {
+    padding: 3px;
+  }
+
+  .plaque {
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+    padding: 0.4rem 0.7rem;
+  }
+}
+
+/* touch devices: no hover lift on cards */
+@media (hover: none) {
+  .card:hover {
+    transform: none;
+  }
+}
+
+/* header on phones: no badge, tighter nav, nothing wider than the viewport */
+@media (max-width: 640px) {
+  header .badge {
+    display: none;
+  }
+
+  header .navlink {
+    font-size: 0.72rem;
+    letter-spacing: 0.05em;
+    padding: 0 0.4rem;
   }
 }
