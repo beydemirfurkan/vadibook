@@ -51,3 +51,16 @@ def test_status_lists_episodes_and_stage_marks(data_root):
     assert result.exit_code == 0, result.output
     assert "pusu/1" in result.output
     assert "0.05" in result.output
+
+
+def test_all_settled_requires_every_stage_done_or_errored(data_root):
+    from vadibook.cli import all_settled
+
+    eps = _eps()
+    assert all_settled(eps, ("fetch", "asr")) is False
+    for e in eps:
+        state.mark_done(e.key, "fetch")
+    state.mark_done("kv-001", "asr")
+    state.mark_done("pusu-001", "asr")
+    state.record_error("pusu-002", "asr", "boom")  # an error counts as settled for this pass
+    assert all_settled(eps, ("fetch", "asr")) is True

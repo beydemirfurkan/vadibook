@@ -58,6 +58,16 @@ def _replace_episode(episodes: list[Episode], updated: Episode) -> list[Episode]
     return [updated if e.id == updated.id else e for e in episodes]
 
 
+def all_settled(episodes: list[Episode], stages: tuple[str, ...]) -> bool:
+    """True when every selected episode has each wanted stage either done or recorded as an error."""
+    for e in episodes:
+        st = state.load(e.key)
+        for stage in stages:
+            if stage not in st["stages"] and stage not in st["errors"]:
+                return False
+    return True
+
+
 # --- per-episode stage bodies (shared by the stage commands and `run`) -------------------------
 
 
@@ -240,15 +250,27 @@ def run(
     model: str = ModelOpt,
     batch_size: int = BatchOpt,
     sleep: float = SleepOpt,
+    repeat: float | None = typer.Option(
+        None, "--repeat", help="Saniye: ön koşulu bekleyen bölümler için bu aralıkla yeniden tara, hepsi bitene kadar"
+    ),
 ) -> None:
     """Seçili bölümler için aşamaları sırayla çalıştırır; kesilirse `state/` sayesinde kaldığı yerden devam eder."""
+    import time
+
     wanted = parse_stages(stages)
-    episodes = catalog_mod.load_episodes()
-    for e in select_episodes(episodes, ep, all_, series):
-        for stage in wanted:
-            episodes = _run_stage(
-                stage, e, episodes, force=force, model=model, batch_size=batch_size, sleep=sleep
-            )
+    while True:
+        episodes = catalog_mod.load_episodes()  # re-read: a parallel `fetch` run may have updated durations
+        selected = select_episodes(episodes, ep, all_, series)
+        for e in selected:
+            for stage in wanted:
+                episodes = _run_stage(
+                    stage, e, episodes, force=force, model=model, batch_size=batch_size, sleep=sleep
+                )
+        force = False  # a forced re-run applies to the first pass only
+        if repeat is None or all_settled(selected, wanted):
+            break
+        console.print(f"[dim]bekleyen bölümler var, {repeat:.0f} sn sonra yeniden taranacak[/]")
+        time.sleep(repeat)
 
 
 @app.command()
