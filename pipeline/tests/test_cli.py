@@ -25,3 +25,29 @@ def test_select_all_and_series_filter():
 def test_select_nothing_is_an_error():
     with pytest.raises(typer.BadParameter):
         select_episodes(_eps(), [], False, None)
+
+
+from typer.testing import CliRunner
+
+from vadibook import catalog, state
+from vadibook.cli import app, parse_stages
+
+
+def test_parse_stages_default_and_subset():
+    assert parse_stages(None) == ("fetch", "asr", "diarize", "align")
+    assert parse_stages("asr,align") == ("asr", "align")
+
+
+def test_parse_stages_rejects_unknown():
+    with pytest.raises(typer.BadParameter):
+        parse_stages("asr,foo")
+
+
+def test_status_lists_episodes_and_stage_marks(data_root):
+    catalog.save_episodes(_eps())
+    state.mark_done("pusu-001", "fetch", duration_sec=5400)
+    state.mark_done("pusu-001", "asr", rtf=0.05)
+    result = CliRunner().invoke(app, ["status"])
+    assert result.exit_code == 0, result.output
+    assert "pusu/1" in result.output
+    assert "0.05" in result.output

@@ -1,10 +1,11 @@
-"""vadibook CLI. Each stage command is idempotent per episode; see `vadibook run`."""
+"""vadibook CLI. Each stage is idempotent per episode; `run` chains them and resumes after interruption."""
 
 from __future__ import annotations
 
 import typer
 from dotenv import load_dotenv
 from rich.console import Console
+from rich.table import Table
 
 from vadibook import align as align_mod
 from vadibook import asr as asr_mod
@@ -20,10 +21,15 @@ load_dotenv(REPO_ROOT / "pipeline" / ".env")
 app = typer.Typer(no_args_is_help=True, add_completion=False, help="Kurtlar Vadisi transkript pipeline'ı")
 console = Console()
 
+STAGES: tuple[str, ...] = ("fetch", "asr", "diarize", "align")
+
 EpOpt = typer.Option([], "--ep", help="Bölüm id'si, tekrarlanabilir: --ep pusu/17 --ep kv/3")
 AllOpt = typer.Option(False, "--all", help="Katalogdaki tüm bölümler")
 SeriesOpt = typer.Option(None, "--series", help="Sadece bu seri: kv | pusu")
 ForceOpt = typer.Option(False, "--force", help="Bitmiş aşamayı yeniden çalıştır")
+ModelOpt = typer.Option("large-v3", "--model", help="faster-whisper modeli: large-v3 | large-v3-turbo")
+BatchOpt = typer.Option(16, "--batch-size", help="Batched inference boyutu (VRAM'e göre)")
+SleepOpt = typer.Option(5.0, "--sleep", help="İndirmeler arası bekleme (sn), YouTube throttling'e karşı")
 
 
 def select_episodes(episodes: list[Episode], ep: list[str], all_: bool, series: str | None) -> list[Episode]:
@@ -38,8 +44,107 @@ def select_episodes(episodes: list[Episode], ep: list[str], all_: bool, series: 
     return selected
 
 
+def parse_stages(spec: str | None) -> tuple[str, ...]:
+    if not spec:
+        return STAGES
+    stages = tuple(s.strip() for s in spec.split(",") if s.strip())
+    unknown = [s for s in stages if s not in STAGES]
+    if unknown:
+        raise typer.BadParameter(f"bilinmeyen aşama: {', '.join(unknown)} (geçerli: {', '.join(STAGES)})")
+    return stages
+
+
 def _replace_episode(episodes: list[Episode], updated: Episode) -> list[Episode]:
     return [updated if e.id == updated.id else e for e in episodes]
+
+
+# --- per-episode stage bodies (shared by the stage commands and `run`) -------------------------
+
+
+def _fetch_one(e: Episode, episodes: list[Episode], sleep: float) -> list[Episode]:
+    updated = fetch_mod.fetch_episode(e, sleep=sleep)
+    episodes = _replace_episode(episodes, updated)
+    catalog_mod.save_episodes(episodes)
+    total = sum(p.duration_sec or 0 for p in updated.parts)
+    state.mark_done(e.key, "fetch", parts=len(updated.parts), duration_sec=total)
+    console.print(f"[green]{e.id}[/] {len(updated.parts)} parça, {total / 60:.1f} dk")
+    return episodes
+
+
+def _asr_one(e: Episode, model: str, batch_size: int) -> None:
+    total_dur = total_elapsed = 0.0
+    for i, _ in enumerate(e.parts, start=1):
+        result = asr_mod.transcribe(audio_path(e.key, i), model_name=model, batch_size=batch_size)
+        asr_path(e.key, i).write_text(result.model_dump_json(), encoding="utf-8")
+        total_dur += result.audio_duration
+        total_elapsed += result.elapsed
+    rtf = total_elapsed / total_dur if total_dur else 0.0
+    state.mark_done(e.key, "asr", model=model, rtf=round(rtf, 4), elapsed=round(total_elapsed, 1))
+    speed = f"{1 / rtf:.0f}" if rtf else "?"
+    console.print(f"[green]{e.id}[/] asr {total_elapsed / 60:.1f} dk, RTF {rtf:.3f} ({speed}× gerçek zaman)")
+
+
+def _diarize_one(e: Episode) -> None:
+    elapsed = 0.0
+    speakers = 0
+    for i, _ in enumerate(e.parts, start=1):
+        result = diarize_mod.diarize(audio_path(e.key, i))
+        diar_path(e.key, i).write_text(result.model_dump_json(), encoding="utf-8")
+        elapsed += result.elapsed
+        speakers += len({t.speaker for t in result.turns})
+    dur = (state.stage_meta(e.key, "fetch") or {}).get("duration_sec") or 0.0
+    rtf = elapsed / dur if dur else 0.0
+    state.mark_done(e.key, "diarize", rtf=round(rtf, 4), elapsed=round(elapsed, 1), speakers=speakers)
+    console.print(f"[green]{e.id}[/] diarize {elapsed / 60:.1f} dk, RTF {rtf:.3f}, {speakers} konuşmacı")
+
+
+def _align_one(e: Episode) -> None:
+    utts = align_mod.align_episode(e)
+    with utterances_path(e.key).open("w", encoding="utf-8") as fh:
+        for u in utts:
+            fh.write(u.model_dump_json() + "\n")
+    speakers = len({u.speaker for u in utts})
+    state.mark_done(e.key, "align", utterances=len(utts), speakers=speakers)
+    console.print(f"[green]{e.id}[/] {len(utts)} utterance, {speakers} konuşmacı")
+
+
+_PREREQ = {"fetch": (), "asr": ("fetch",), "diarize": ("fetch",), "align": ("asr", "diarize")}
+
+
+def _run_stage(
+    stage: str,
+    e: Episode,
+    episodes: list[Episode],
+    *,
+    force: bool,
+    model: str,
+    batch_size: int,
+    sleep: float,
+) -> list[Episode]:
+    """Run one stage for one episode with skip/prereq/error bookkeeping. Returns possibly-updated catalog."""
+    if state.is_done(e.key, stage) and not force:
+        console.print(f"[dim]{e.id} {stage} atlandı (bitmiş)[/]")
+        return episodes
+    missing = [p for p in _PREREQ[stage] if not state.is_done(e.key, p)]
+    if missing:
+        console.print(f"[yellow]{e.id} {stage} atlandı: önce {', '.join(missing)}[/]")
+        return episodes
+    try:
+        if stage == "fetch":
+            return _fetch_one(e, episodes, sleep)
+        if stage == "asr":
+            _asr_one(e, model, batch_size)
+        elif stage == "diarize":
+            _diarize_one(e)
+        elif stage == "align":
+            _align_one(e)
+    except Exception as exc:  # noqa: BLE001 — record and keep the batch going
+        state.record_error(e.key, stage, str(exc))
+        console.print(f"[red]{e.id} {stage} hata:[/] {exc}")
+    return episodes
+
+
+# --- commands ---------------------------------------------------------------------------------
 
 
 @app.callback()
@@ -49,7 +154,7 @@ def _root() -> None:
 
 @app.command()
 def catalog() -> None:
-    """İki resmi playlist'i tarayıp data/public/episodes.json üretir; eksik/çift bölümleri raporlar."""
+    """Resmi playlist'leri tarayıp data/public/episodes.json üretir; eksik/çift bölümleri raporlar."""
     entries: dict[str, list[dict]] = {}
     for series, url in catalog_mod.PLAYLISTS:
         items = catalog_mod.fetch_playlist(url)
@@ -70,115 +175,110 @@ def catalog() -> None:
 
 @app.command()
 def fetch(
-    ep: list[str] = EpOpt, all_: bool = AllOpt, series: str | None = SeriesOpt, force: bool = ForceOpt,
-    sleep: float = typer.Option(5.0, help="İndirmeler arası bekleme (sn), YouTube throttling'e karşı"),
+    ep: list[str] = EpOpt,
+    all_: bool = AllOpt,
+    series: str | None = SeriesOpt,
+    force: bool = ForceOpt,
+    sleep: float = SleepOpt,
 ) -> None:
     """Sesi (yalnız ses) ve otomatik TR altyazıyı indirir; parça sürelerini ölçüp episodes.json'ı günceller."""
     episodes = catalog_mod.load_episodes()
     for e in select_episodes(episodes, ep, all_, series):
-        if state.is_done(e.key, "fetch") and not force:
-            console.print(f"[dim]{e.id} fetch atlandı (bitmiş)[/]")
-            continue
-        try:
-            updated = fetch_mod.fetch_episode(e, sleep=sleep)
-        except Exception as exc:  # noqa: BLE001 — keep the batch going, record the failure
-            state.record_error(e.key, "fetch", str(exc))
-            console.print(f"[red]{e.id} fetch hata:[/] {exc}")
-            continue
-        episodes = _replace_episode(episodes, updated)
-        catalog_mod.save_episodes(episodes)
-        total = sum(p.duration_sec or 0 for p in updated.parts)
-        state.mark_done(e.key, "fetch", parts=len(updated.parts), duration_sec=total)
-        console.print(f"[green]{e.id}[/] {len(updated.parts)} parça, {total/60:.1f} dk")
+        episodes = _run_stage("fetch", e, episodes, force=force, model="", batch_size=0, sleep=sleep)
 
 
 @app.command()
 def asr(
-    ep: list[str] = EpOpt, all_: bool = AllOpt, series: str | None = SeriesOpt, force: bool = ForceOpt,
-    model: str = typer.Option("large-v3", help="faster-whisper modeli: large-v3 | large-v3-turbo"),
-    batch_size: int = typer.Option(16, help="Batched inference boyutu (VRAM'e göre)"),
+    ep: list[str] = EpOpt,
+    all_: bool = AllOpt,
+    series: str | None = SeriesOpt,
+    force: bool = ForceOpt,
+    model: str = ModelOpt,
+    batch_size: int = BatchOpt,
 ) -> None:
     """Sesi faster-whisper ile kelime zamanlı transkript eder → data/private/asr/."""
     episodes = catalog_mod.load_episodes()
     for e in select_episodes(episodes, ep, all_, series):
-        if state.is_done(e.key, "asr") and not force:
-            console.print(f"[dim]{e.id} asr atlandı (bitmiş)[/]")
-            continue
-        if not state.is_done(e.key, "fetch"):
-            console.print(f"[yellow]{e.id} asr atlandı: önce fetch[/]")
-            continue
-        try:
-            total_dur = total_elapsed = 0.0
-            for i, _ in enumerate(e.parts, start=1):
-                result = asr_mod.transcribe(audio_path(e.key, i), model_name=model, batch_size=batch_size)
-                asr_path(e.key, i).write_text(result.model_dump_json(), encoding="utf-8")
-                total_dur += result.audio_duration
-                total_elapsed += result.elapsed
-        except Exception as exc:  # noqa: BLE001
-            state.record_error(e.key, "asr", str(exc))
-            console.print(f"[red]{e.id} asr hata:[/] {exc}")
-            continue
-        rtf = total_elapsed / total_dur if total_dur else 0.0
-        state.mark_done(e.key, "asr", model=model, rtf=round(rtf, 4), elapsed=round(total_elapsed, 1))
-        console.print(f"[green]{e.id}[/] asr {total_elapsed/60:.1f} dk, RTF {rtf:.3f} ({1/rtf if rtf else 0:.0f}× gerçek zaman)")
+        _run_stage("asr", e, episodes, force=force, model=model, batch_size=batch_size, sleep=0)
 
 
 @app.command()
 def diarize(
-    ep: list[str] = EpOpt, all_: bool = AllOpt, series: str | None = SeriesOpt, force: bool = ForceOpt,
+    ep: list[str] = EpOpt,
+    all_: bool = AllOpt,
+    series: str | None = SeriesOpt,
+    force: bool = ForceOpt,
 ) -> None:
     """pyannote ile konuşmacı ayrıştırma + konuşmacı embedding'leri → data/private/diar/."""
     episodes = catalog_mod.load_episodes()
     for e in select_episodes(episodes, ep, all_, series):
-        if state.is_done(e.key, "diarize") and not force:
-            console.print(f"[dim]{e.id} diarize atlandı (bitmiş)[/]")
-            continue
-        if not state.is_done(e.key, "fetch"):
-            console.print(f"[yellow]{e.id} diarize atlandı: önce fetch[/]")
-            continue
-        try:
-            elapsed = 0.0
-            speakers = 0
-            for i, _ in enumerate(e.parts, start=1):
-                result = diarize_mod.diarize(audio_path(e.key, i))
-                diar_path(e.key, i).write_text(result.model_dump_json(), encoding="utf-8")
-                elapsed += result.elapsed
-                speakers += len({t.speaker for t in result.turns})
-        except Exception as exc:  # noqa: BLE001
-            state.record_error(e.key, "diarize", str(exc))
-            console.print(f"[red]{e.id} diarize hata:[/] {exc}")
-            continue
-        dur = (state.stage_meta(e.key, "fetch") or {}).get("duration_sec") or 0.0
-        rtf = elapsed / dur if dur else 0.0
-        state.mark_done(e.key, "diarize", rtf=round(rtf, 4), elapsed=round(elapsed, 1), speakers=speakers)
-        console.print(f"[green]{e.id}[/] diarize {elapsed/60:.1f} dk, RTF {rtf:.3f}, {speakers} konuşmacı")
+        _run_stage("diarize", e, episodes, force=force, model="", batch_size=0, sleep=0)
 
 
 @app.command()
 def align(
-    ep: list[str] = EpOpt, all_: bool = AllOpt, series: str | None = SeriesOpt, force: bool = ForceOpt,
+    ep: list[str] = EpOpt,
+    all_: bool = AllOpt,
+    series: str | None = SeriesOpt,
+    force: bool = ForceOpt,
 ) -> None:
     """ASR kelimelerini konuşmacı turn'leriyle birleştirip utterance JSONL üretir."""
     episodes = catalog_mod.load_episodes()
     for e in select_episodes(episodes, ep, all_, series):
-        if state.is_done(e.key, "align") and not force:
-            console.print(f"[dim]{e.id} align atlandı (bitmiş)[/]")
-            continue
-        if not (state.is_done(e.key, "asr") and state.is_done(e.key, "diarize")):
-            console.print(f"[yellow]{e.id} align atlandı: önce asr + diarize[/]")
-            continue
-        try:
-            utts = align_mod.align_episode(e)
-            with utterances_path(e.key).open("w", encoding="utf-8") as fh:
-                for u in utts:
-                    fh.write(u.model_dump_json() + "\n")
-        except Exception as exc:  # noqa: BLE001
-            state.record_error(e.key, "align", str(exc))
-            console.print(f"[red]{e.id} align hata:[/] {exc}")
-            continue
-        speakers = len({u.speaker for u in utts})
-        state.mark_done(e.key, "align", utterances=len(utts), speakers=speakers)
-        console.print(f"[green]{e.id}[/] {len(utts)} utterance, {speakers} konuşmacı")
+        _run_stage("align", e, episodes, force=force, model="", batch_size=0, sleep=0)
+
+
+@app.command()
+def run(
+    ep: list[str] = EpOpt,
+    all_: bool = AllOpt,
+    series: str | None = SeriesOpt,
+    force: bool = ForceOpt,
+    stages: str | None = typer.Option(
+        None, "--stages", help="Virgülle: fetch,asr,diarize,align (varsayılan hepsi)"
+    ),
+    model: str = ModelOpt,
+    batch_size: int = BatchOpt,
+    sleep: float = SleepOpt,
+) -> None:
+    """Seçili bölümler için aşamaları sırayla çalıştırır; kesilirse `state/` sayesinde kaldığı yerden devam eder."""
+    wanted = parse_stages(stages)
+    episodes = catalog_mod.load_episodes()
+    for e in select_episodes(episodes, ep, all_, series):
+        for stage in wanted:
+            episodes = _run_stage(
+                stage, e, episodes, force=force, model=model, batch_size=batch_size, sleep=sleep
+            )
+
+
+@app.command()
+def status(series: str | None = SeriesOpt) -> None:
+    """Bölüm × aşama tablosu (RTF = işlem süresi / ses süresi)."""
+    episodes = catalog_mod.load_episodes()
+    if series:
+        episodes = [e for e in episodes if e.series == series]
+    table = Table(title="vadibook durum")
+    for col in ("bölüm", "parça", "dk", "fetch", "asr (rtf)", "diarize (rtf)", "align (utt)", "hata"):
+        table.add_column(col)
+    done_counts = dict.fromkeys(STAGES, 0)
+    for e in episodes:
+        st = state.load(e.key)
+        stages = st["stages"]
+        for s in STAGES:
+            done_counts[s] += s in stages
+        dur = (stages.get("fetch") or {}).get("duration_sec")
+        table.add_row(
+            e.id,
+            str(len(e.parts)),
+            f"{dur / 60:.0f}" if dur else "",
+            "✓" if "fetch" in stages else "",
+            f"{stages['asr'].get('rtf', '')}" if "asr" in stages else "",
+            f"{stages['diarize'].get('rtf', '')}" if "diarize" in stages else "",
+            f"{stages['align'].get('utterances', '')}" if "align" in stages else "",
+            "; ".join(f"{k}: {v['message'][:40]}" for k, v in st["errors"].items()),
+        )
+    console.print(table)
+    console.print(" · ".join(f"{s}: {done_counts[s]}/{len(episodes)}" for s in STAGES))
 
 
 if __name__ == "__main__":
