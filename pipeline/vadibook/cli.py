@@ -6,13 +6,14 @@ import typer
 from dotenv import load_dotenv
 from rich.console import Console
 
+from vadibook import align as align_mod
 from vadibook import asr as asr_mod
 from vadibook import catalog as catalog_mod
 from vadibook import diarize as diarize_mod
 from vadibook import fetch as fetch_mod
 from vadibook import state
 from vadibook.models import Episode
-from vadibook.paths import REPO_ROOT, asr_path, audio_path, diar_path
+from vadibook.paths import REPO_ROOT, asr_path, audio_path, diar_path, utterances_path
 
 load_dotenv(REPO_ROOT / "pipeline" / ".env")
 
@@ -151,6 +152,34 @@ def diarize(
         rtf = elapsed / dur if dur else 0.0
         state.mark_done(e.key, "diarize", rtf=round(rtf, 4), elapsed=round(elapsed, 1), speakers=speakers)
         console.print(f"[green]{e.id}[/] diarize {elapsed/60:.1f} dk, RTF {rtf:.3f}, {speakers} konuşmacı")
+
+
+@app.command()
+def align(
+    ep: list[str] = EpOpt, all_: bool = AllOpt, series: str | None = SeriesOpt, force: bool = ForceOpt,
+) -> None:
+    """ASR kelimelerini konuşmacı turn'leriyle birleştirip utterance JSONL üretir."""
+    episodes = catalog_mod.load_episodes()
+    for e in select_episodes(episodes, ep, all_, series):
+        if state.is_done(e.key, "align") and not force:
+            console.print(f"[dim]{e.id} align atlandı (bitmiş)[/]")
+            continue
+        if not (state.is_done(e.key, "asr") and state.is_done(e.key, "diarize")):
+            console.print(f"[yellow]{e.id} align atlandı: önce asr + diarize[/]")
+            continue
+        try:
+            utts = align_mod.align_episode(e)
+            with utterances_path(e.key).open("w", encoding="utf-8") as fh:
+                for u in utts:
+                    fh.write(u.model_dump_json() + "
+")
+        except Exception as exc:  # noqa: BLE001
+            state.record_error(e.key, "align", str(exc))
+            console.print(f"[red]{e.id} align hata:[/] {exc}")
+            continue
+        speakers = len({u.speaker for u in utts})
+        state.mark_done(e.key, "align", utterances=len(utts), speakers=speakers)
+        console.print(f"[green]{e.id}[/] {len(utts)} utterance, {speakers} konuşmacı")
 
 
 if __name__ == "__main__":
