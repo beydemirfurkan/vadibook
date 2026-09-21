@@ -18,15 +18,15 @@ export default function Home() {
   const pct = Math.round((stats.episodes / TOTAL_EPISODES) * 100);
 
   return (
-    <div className="space-y-16">
-      <section className="rise space-y-8 pt-6 sm:pt-12">
-        <p className="stamp">Bilirkişi aylarca inceleyecek · biz 3 saniyede</p>
-        <h1 className="font-display text-[2.6rem] leading-[1.02] tracking-tight text-ink sm:text-[4.2rem]">
-          397 bölüm. <em className="not-italic text-stamp">Her cümle.</em>
+    <div className="space-y-20">
+      <section className="rise space-y-9 pt-10 sm:pt-20">
+        <p className="badge">Bilirkişi aylarca inceleyecek · biz 3 saniyede</p>
+        <h1 className="font-display text-[2.3rem] leading-[1.08] sm:text-[4.4rem]">
+          <span className="steel-text">397 Bölüm.</span> <span className="steel-text-accent">Her Cümle.</span>
           <br />
-          Saniyesine kadar.
+          <span className="steel-text">Saniyesine Kadar.</span>
         </h1>
-        <p className="max-w-2xl font-body text-lg leading-relaxed text-ink-2">
+        <p className="max-w-2xl font-body text-xl leading-relaxed text-fg-2">
           Kurtlar Vadisi ve Pusu&rsquo;nun bütün diyalogları, kim ne zaman söyledi bilgisiyle aranabilir.
           Her sonuç resmi YouTube yüklemesinde tam o saniyeye götürür.
         </p>
@@ -36,7 +36,7 @@ export default function Home() {
             <li key={q}>
               <Link
                 href={`/ara?q=${encodeURIComponent(q)}`}
-                className="inline-block border border-ink-3 px-3 py-1 font-mono text-[0.7rem] uppercase tracking-[0.12em] text-ink-2 hover:border-stamp hover:text-stamp"
+                className="inline-block border border-line-2 px-3 py-1 font-mono text-[0.66rem] uppercase tracking-[0.14em] text-fg-2 hover:border-steel hover:text-moon"
               >
                 {q}
               </Link>
@@ -54,14 +54,14 @@ export default function Home() {
       </section>
 
       <section id="bolumler" className="space-y-5">
-        <h2 className="font-display text-2xl text-ink">Son işlenen bölümler</h2>
+        <h2 className="steel-text font-display text-2xl">Son İşlenen Bölümler</h2>
         <ul className="grid gap-x-8 gap-y-2 sm:grid-cols-2 lg:grid-cols-3">
           {recent.map((e) => (
-            <li key={e.key} className="flex items-baseline justify-between border-b border-rule py-2">
-              <Link href={episodeHref(e.series, e.no)} className="font-body text-ink hover:text-stamp">
+            <li key={e.key} className="flex items-baseline justify-between border-b border-line py-2">
+              <Link href={episodeHref(e.series, e.no)} className="font-body text-lg text-fg hover:text-moon">
                 {seriesShort(e.series)} · {e.no}. Bölüm
               </Link>
-              <span className="font-mono text-[0.7rem] text-ink-3 tabular">{Math.round(e.duration_sec / 60)} dk</span>
+              <span className="font-mono text-[0.68rem] text-fg-3 tabular">{Math.round(e.duration_sec / 60)} dk</span>
             </li>
           ))}
         </ul>
@@ -73,9 +73,9 @@ export default function Home() {
 function Stat({ label, value, note }: { label: string; value: string; note: string }) {
   return (
     <div className="space-y-1">
-      <div className="font-mono text-[0.68rem] uppercase tracking-[0.14em] text-ink-3">{label}</div>
-      <div className="font-display text-4xl text-ink tabular">{value}</div>
-      <div className="font-mono text-[0.7rem] text-ink-2">{note}</div>
+      <div className="font-mono text-[0.66rem] uppercase tracking-[0.16em] text-fg-3">{label}</div>
+      <div className="steel-text font-display text-4xl tabular">{value}</div>
+      <div className="font-mono text-[0.68rem] text-fg-2">{note}</div>
     </div>
   );
 }

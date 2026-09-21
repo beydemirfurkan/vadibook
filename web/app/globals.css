@@ -1,64 +1,60 @@
 @import "tailwindcss";
 
 /* ---------------------------------------------------------------------------
-   vadibook — "soruşturma dosyası" (case file) look.
-   Warm paper, ink, one sharp accent (stamp red), highlighter yellow for matches.
+   vadibook — "vadide gece" (night in the valley).
+   Deep night sky, moonlight, drifting cloud, mountain silhouettes, steel type.
    --------------------------------------------------------------------------- */
 
 :root {
-  --paper: #f4efe4;
-  --paper-2: #ebe4d3;
-  --paper-3: #dcd3bd;
-  --ink: #1a1710;
-  --ink-2: #4b463a;
-  --ink-3: #8a836f;
-  --rule: #cfc5ab;
-  --stamp: #b3261e;
-  --stamp-2: #8e1c15;
-  --marker: #ffe45c;
-  --marker-2: #f7d21f;
+  --bg: #05070d;
+  --bg-2: #0a1020;
+  --bg-3: #111a2e;
+  --fg: #e6ebf4;
+  --fg-2: #a9b3c6;
+  --fg-3: #6b7689;
+  --line: rgba(170, 186, 214, 0.18);
+  --line-2: rgba(170, 186, 214, 0.34);
+  --steel: #c7d0dd;
+  --steel-2: #8e9bb0;
+  --moon: #f2f5ff;
+  --moon-glow: rgba(214, 226, 255, 0.55);
+  --accent: #b3141c;
+  --accent-2: #d8262f;
+  --mark: rgba(210, 224, 255, 0.2);
 }
 
 @theme inline {
-  --color-paper: var(--paper);
-  --color-paper-2: var(--paper-2);
-  --color-paper-3: var(--paper-3);
-  --color-ink: var(--ink);
-  --color-ink-2: var(--ink-2);
-  --color-ink-3: var(--ink-3);
-  --color-rule: var(--rule);
-  --color-stamp: var(--stamp);
-  --color-stamp-2: var(--stamp-2);
-  --color-marker: var(--marker);
-  --color-marker-2: var(--marker-2);
-  --font-display: var(--font-fraunces);
-  --font-body: var(--font-literata);
+  --color-bg: var(--bg);
+  --color-bg-2: var(--bg-2);
+  --color-bg-3: var(--bg-3);
+  --color-fg: var(--fg);
+  --color-fg-2: var(--fg-2);
+  --color-fg-3: var(--fg-3);
+  --color-line: var(--line);
+  --color-line-2: var(--line-2);
+  --color-steel: var(--steel);
+  --color-steel-2: var(--steel-2);
+  --color-moon: var(--moon);
+  --color-accent: var(--accent);
+  --color-accent-2: var(--accent-2);
+  --font-display: var(--font-cinzel);
+  --font-body: var(--font-cormorant);
   --font-mono: var(--font-plex-mono);
 }
 
 html {
-  background: var(--paper);
-  color: var(--ink);
+  background: var(--bg);
+  color: var(--fg);
   font-family: var(--font-body), Georgia, serif;
-  font-feature-settings: "kern", "liga", "onum";
+  font-size: 17px;
   scroll-behavior: smooth;
+  color-scheme: dark;
 }
 
 body {
   min-height: 100%;
   position: relative;
-}
-
-/* paper grain: a tiny SVG noise tile at low opacity, no image asset needed */
-body::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  opacity: 0.55;
-  mix-blend-mode: multiply;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.35 0 0 0 0 0.31 0 0 0 0 0.22 0 0 0 0.08 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background: linear-gradient(180deg, #03050a 0%, #070c18 35%, #0b1224 70%, #0d1426 100%);
 }
 
 body > * {
@@ -67,35 +63,200 @@ body > * {
 }
 
 ::selection {
-  background: var(--marker);
-  color: var(--ink);
+  background: rgba(214, 226, 255, 0.35);
+  color: var(--moon);
 }
 
-/* Highlighter stroke for search matches: painted in from the left on load. */
-mark {
-  background: linear-gradient(120deg, var(--marker) 0%, var(--marker-2) 100%) no-repeat left center;
-  background-size: 100% 88%;
-  color: inherit;
-  padding: 0 0.12em;
-  margin: 0 -0.12em;
-  border-radius: 2px;
-  box-decoration-break: clone;
-  -webkit-box-decoration-break: clone;
+/* --- sky --------------------------------------------------------------- */
+
+.sky {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
 }
 
-@keyframes mark-in {
+/* three star layers, each a tiled radial-gradient field, twinkling out of phase */
+.stars {
+  position: absolute;
+  inset: -10%;
+  background-repeat: repeat;
+  will-change: opacity;
+}
+
+.stars-1 {
+  background-image:
+    radial-gradient(1px 1px at 12px 34px, rgba(255, 255, 255, 0.9) 50%, transparent 51%),
+    radial-gradient(1px 1px at 90px 120px, rgba(255, 255, 255, 0.7) 50%, transparent 51%),
+    radial-gradient(1.5px 1.5px at 160px 60px, rgba(255, 255, 255, 0.95) 50%, transparent 51%),
+    radial-gradient(1px 1px at 220px 200px, rgba(255, 255, 255, 0.6) 50%, transparent 51%),
+    radial-gradient(1px 1px at 300px 90px, rgba(255, 255, 255, 0.8) 50%, transparent 51%);
+  background-size: 340px 260px;
+  animation: twinkle 6s ease-in-out infinite;
+}
+
+.stars-2 {
+  background-image:
+    radial-gradient(1px 1px at 40px 180px, rgba(255, 255, 255, 0.55) 50%, transparent 51%),
+    radial-gradient(1.2px 1.2px at 130px 20px, rgba(255, 255, 255, 0.8) 50%, transparent 51%),
+    radial-gradient(1px 1px at 250px 150px, rgba(255, 255, 255, 0.5) 50%, transparent 51%),
+    radial-gradient(1px 1px at 380px 240px, rgba(255, 255, 255, 0.7) 50%, transparent 51%);
+  background-size: 420px 300px;
+  animation: twinkle 9s ease-in-out infinite reverse;
+}
+
+.stars-3 {
+  background-image:
+    radial-gradient(0.8px 0.8px at 60px 60px, rgba(255, 255, 255, 0.4) 50%, transparent 51%),
+    radial-gradient(0.8px 0.8px at 200px 130px, rgba(255, 255, 255, 0.35) 50%, transparent 51%),
+    radial-gradient(0.8px 0.8px at 330px 40px, rgba(255, 255, 255, 0.45) 50%, transparent 51%);
+  background-size: 380px 220px;
+  opacity: 0.7;
+}
+
+@keyframes twinkle {
+  0%,
+  100% {
+    opacity: 0.85;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}
+
+.moon {
+  position: absolute;
+  top: 7vh;
+  right: 9vw;
+  width: clamp(80px, 9vw, 140px);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(circle at 38% 36%, #ffffff 0%, #eef2ff 35%, #c9d3ea 70%, #aeb9d3 100%);
+  box-shadow:
+    0 0 40px 10px rgba(214, 226, 255, 0.35),
+    0 0 140px 50px rgba(150, 170, 220, 0.18),
+    0 0 320px 120px rgba(90, 110, 170, 0.12);
+}
+
+/* crater shading, subtle */
+.moon::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 62% 58%, rgba(120, 135, 170, 0.35) 0 9%, transparent 10%),
+    radial-gradient(circle at 30% 66%, rgba(120, 135, 170, 0.3) 0 6%, transparent 7%),
+    radial-gradient(circle at 70% 28%, rgba(120, 135, 170, 0.25) 0 5%, transparent 6%);
+}
+
+/* clouds: blurred soft blobs drifting across the moon */
+.cloud {
+  position: absolute;
+  width: 60vw;
+  height: 22vh;
+  border-radius: 50%;
+  filter: blur(38px);
+  opacity: 0.45;
+  background: radial-gradient(ellipse at center, rgba(150, 165, 200, 0.55), rgba(60, 75, 110, 0.25) 60%, transparent 75%);
+  animation: drift linear infinite;
+  will-change: transform;
+}
+
+.cloud-1 {
+  top: 12vh;
+  left: -20vw;
+  animation-duration: 150s;
+}
+
+.cloud-2 {
+  top: 26vh;
+  left: 10vw;
+  width: 70vw;
+  opacity: 0.32;
+  animation-duration: 210s;
+  animation-delay: -80s;
+}
+
+.cloud-3 {
+  top: 40vh;
+  left: -30vw;
+  opacity: 0.28;
+  animation-duration: 260s;
+  animation-delay: -160s;
+}
+
+@keyframes drift {
   from {
-    background-size: 0% 88%;
+    transform: translateX(0);
   }
   to {
-    background-size: 100% 88%;
+    transform: translateX(120vw);
   }
+}
+
+.mountains {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.haze {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 55%, rgba(5, 7, 13, 0.55) 85%, rgba(5, 7, 13, 0.9) 100%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stars,
+  .cloud {
+    animation: none;
+  }
+}
+
+/* --- type --------------------------------------------------------------- */
+
+/* brushed-steel display text: light-to-shadow vertical gradient + faint bevel */
+.steel-text {
+  background: linear-gradient(180deg, #ffffff 0%, #e7ecf5 30%, #b7c2d4 55%, #f3f6fb 62%, #8593aa 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 1px 0 rgba(255, 255, 255, 0.25)) drop-shadow(0 6px 18px rgba(0, 0, 0, 0.6));
+  letter-spacing: 0.02em;
+}
+
+.steel-text-accent {
+  background: linear-gradient(180deg, #ff7a80 0%, #e2323b 45%, #ff5d66 55%, #7d0f15 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 6px 18px rgba(179, 20, 28, 0.35));
+}
+
+/* moonlight highlight for search matches */
+mark {
+  background: var(--mark);
+  color: var(--moon);
+  padding: 0 0.15em;
+  margin: 0 -0.15em;
+  border-radius: 2px;
+  box-shadow:
+    inset 0 -1px 0 rgba(214, 226, 255, 0.55),
+    0 0 14px rgba(214, 226, 255, 0.18);
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
 }
 
 @keyframes rise {
   from {
     opacity: 0;
-    transform: translateY(10px);
+    transform: translateY(12px);
   }
   to {
     opacity: 1;
@@ -104,80 +265,104 @@ mark {
 }
 
 .rise {
-  animation: rise 0.55s cubic-bezier(0.2, 0.7, 0.2, 1) both;
-}
-
-.rise mark {
-  animation: mark-in 0.6s 0.25s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  animation: rise 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) both;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .rise,
-  .rise mark {
+  .rise {
     animation: none;
   }
 }
 
-/* rubber stamp badge */
-.stamp {
+/* small steel plaque badge */
+.badge {
   font-family: var(--font-mono), monospace;
-  font-size: 0.68rem;
-  letter-spacing: 0.14em;
+  font-size: 0.66rem;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--stamp);
-  border: 1.5px solid currentColor;
-  border-radius: 3px;
-  padding: 0.18rem 0.5rem;
-  transform: rotate(-2deg);
+  color: var(--steel);
+  border: 1px solid var(--line-2);
+  border-radius: 2px;
+  padding: 0.22rem 0.55rem;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.01));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
   display: inline-block;
-  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--paper) 60%, transparent);
-  opacity: 0.92;
 }
 
-/* ruled-paper input underline */
+/* search input: dark field, steel underline, moon glow on focus */
 .rule-input {
   background: transparent;
   border: 0;
-  border-bottom: 2px solid var(--ink);
+  border-bottom: 1px solid var(--line-2);
   border-radius: 0;
   outline: none;
-  transition: border-color 0.2s;
+  color: var(--fg);
+  transition:
+    border-color 0.25s,
+    box-shadow 0.25s;
 }
 
 .rule-input:focus {
-  border-bottom-color: var(--stamp);
+  border-bottom-color: var(--steel);
+  box-shadow: 0 12px 30px -18px var(--moon-glow);
 }
 
 .rule-input::placeholder {
-  color: var(--ink-3);
+  color: var(--fg-3);
   font-style: italic;
 }
 
-/* thin double rule, like a file divider */
+.rule-input::-webkit-search-cancel-button {
+  filter: invert(1) brightness(1.6);
+}
+
 .hr-double {
   border: 0;
   height: 5px;
-  border-top: 1px solid var(--ink);
-  border-bottom: 1px solid var(--ink);
+  border-top: 1px solid var(--line-2);
+  border-bottom: 1px solid var(--line);
 }
 
-/* evidence card */
+/* dark glass card with a steel top edge */
 .card {
-  background: color-mix(in oklab, var(--paper) 70%, white);
-  border: 1px solid var(--rule);
+  background: linear-gradient(180deg, rgba(20, 28, 48, 0.72), rgba(10, 16, 30, 0.72));
+  border: 1px solid var(--line);
   box-shadow:
-    0 1px 0 rgba(26, 23, 16, 0.06),
-    0 10px 24px -18px rgba(26, 23, 16, 0.5);
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 20px 40px -24px rgba(0, 0, 0, 0.9);
+  backdrop-filter: blur(6px);
   transition:
-    transform 0.25s cubic-bezier(0.2, 0.7, 0.2, 1),
-    box-shadow 0.25s;
+    transform 0.3s cubic-bezier(0.2, 0.7, 0.2, 1),
+    border-color 0.3s,
+    box-shadow 0.3s;
 }
 
 .card:hover {
   transform: translateY(-2px);
+  border-color: var(--line-2);
   box-shadow:
-    0 1px 0 rgba(26, 23, 16, 0.06),
-    0 18px 32px -18px rgba(26, 23, 16, 0.55);
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    0 24px 48px -24px rgba(0, 0, 0, 0.95),
+    0 0 40px -20px var(--moon-glow);
+}
+
+.btn-accent {
+  background: linear-gradient(180deg, #d0262e 0%, #a5121a 100%);
+  color: #fff;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.25),
+    0 10px 24px -12px rgba(179, 20, 28, 0.8);
+  transition:
+    filter 0.2s,
+    transform 0.1s;
+}
+
+.btn-accent:hover {
+  filter: brightness(1.12);
+}
+
+.btn-accent:active {
+  transform: translateY(1px);
 }
 
 .tabular {

@@ -40,7 +40,7 @@ export default async function SearchPage({ searchParams }: Props) {
     <div className="space-y-8">
       <SearchBox initialQuery={q} series={series} ep={ep} size="hero" />
 
-      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-rule pb-3">
+      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-line pb-3">
         <ul className="flex gap-1 font-mono text-[0.7rem] uppercase tracking-[0.12em]">
           {(
             [
@@ -52,34 +52,34 @@ export default async function SearchPage({ searchParams }: Props) {
             <li key={label}>
               <Link
                 href={hrefFor({ series: s })}
-                className={`inline-block px-3 py-1 ${series === s ? "bg-ink text-paper" : "text-ink-2 hover:text-stamp"}`}
+                className={`inline-block px-3 py-1 ${series === s ? "bg-steel text-bg" : "text-fg-2 hover:text-moon"}`}
               >
                 {label}
               </Link>
             </li>
           ))}
           {ep !== undefined && series && (
-            <li className="px-3 py-1 text-stamp">
+            <li className="px-3 py-1 text-accent-2">
               {seriesName(series)} · {ep}. Bölüm{" "}
-              <Link href={`/ara?q=${encodeURIComponent(q)}`} className="ml-1 text-ink-3 hover:text-stamp" aria-label="Bölüm filtresini kaldır">
+              <Link href={`/ara?q=${encodeURIComponent(q)}`} className="ml-1 text-fg-3 hover:text-moon" aria-label="Bölüm filtresini kaldır">
                 ×
               </Link>
             </li>
           )}
         </ul>
         {result && (
-          <p className="font-mono text-[0.7rem] uppercase tracking-[0.12em] text-ink-3">
+          <p className="font-mono text-[0.7rem] uppercase tracking-[0.12em] text-fg-3">
             {nf.format(result.total)} sonuç · {result.ms} ms
           </p>
         )}
       </div>
 
-      {!q && <p className="font-body text-ink-2">Aramak için bir şey yaz.</p>}
+      {!q && <p className="font-body text-fg-2">Aramak için bir şey yaz.</p>}
 
       {result && result.hits.length === 0 && (
         <div className="space-y-2 py-10 text-center">
-          <p className="font-display text-2xl text-ink">Sonuç yok.</p>
-          <p className="font-body text-ink-2">
+          <p className="steel-text font-display text-2xl">Sonuç Yok.</p>
+          <p className="font-body text-fg-2">
             Şapkasız da dene (<em>kasifoglu</em>), ya da daha kısa bir kelime. Arşiv henüz dolmaya devam ediyor.
           </p>
         </div>
@@ -98,17 +98,17 @@ export default async function SearchPage({ searchParams }: Props) {
       {result && result.pages > 1 && (
         <nav className="flex items-center justify-between font-mono text-[0.7rem] uppercase tracking-[0.12em]" aria-label="Sayfalar">
           {page > 1 ? (
-            <Link href={hrefFor({ page: page - 1 })} className="text-ink-2 hover:text-stamp">
+            <Link href={hrefFor({ page: page - 1 })} className="text-fg-2 hover:text-moon">
               ← Önceki
             </Link>
           ) : (
             <span />
           )}
-          <span className="text-ink-3">
+          <span className="text-fg-3">
             Sayfa {page} / {result.pages} · {HITS_PER_PAGE}&rsquo;lik
           </span>
           {page < result.pages ? (
-            <Link href={hrefFor({ page: page + 1 })} className="text-ink-2 hover:text-stamp">
+            <Link href={hrefFor({ page: page + 1 })} className="text-fg-2 hover:text-moon">
               Sonraki →
             </Link>
           ) : (

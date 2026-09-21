@@ -22,18 +22,18 @@ export function SpeakerTimeline({ turns, duration, maxLanes = 12 }: { turns: Tim
     <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto" role="img" aria-label="Konuşmacı zaman çizelgesi">
       {ticks.map((t) => (
         <g key={t}>
-          <line x1={x(t)} x2={x(t)} y1={0} y2={H - 20} stroke="var(--rule)" strokeWidth={1} />
-          <text x={x(t)} y={H - 6} fontSize={10} fill="var(--ink-3)" fontFamily="var(--font-mono)" textAnchor="middle">
+          <line x1={x(t)} x2={x(t)} y1={0} y2={H - 20} stroke="var(--line)" strokeWidth={1} />
+          <text x={x(t)} y={H - 6} fontSize={10} fill="var(--fg-3)" fontFamily="var(--font-mono)" textAnchor="middle">
             {fmtTime(t)}
           </text>
         </g>
       ))}
       {lanes.map(([spk, sec], i) => (
         <g key={spk}>
-          <text x={0} y={i * laneH + 13} fontSize={10.5} fill="var(--ink-2)" fontFamily="var(--font-mono)">
+          <text x={0} y={i * laneH + 13} fontSize={10.5} fill="var(--fg-2)" fontFamily="var(--font-mono)">
             {speakerLabel(spk)}
           </text>
-          <text x={labelW - 8} y={i * laneH + 13} fontSize={9} fill="var(--ink-3)" fontFamily="var(--font-mono)" textAnchor="end">
+          <text x={labelW - 8} y={i * laneH + 13} fontSize={9} fill="var(--fg-3)" fontFamily="var(--font-mono)" textAnchor="end">
             {Math.round(sec / 60)}dk
           </text>
         </g>
@@ -48,8 +48,8 @@ export function SpeakerTimeline({ turns, duration, maxLanes = 12 }: { turns: Tim
             y={lane * laneH + 3}
             width={Math.max(1.2, x(t.end) - x(t.start))}
             height={laneH - 6}
-            fill={lane === 0 ? "var(--stamp)" : "var(--ink)"}
-            opacity={lane === 0 ? 0.85 : 0.55 - Math.min(lane, 8) * 0.03}
+            fill={lane === 0 ? "var(--accent-2)" : "var(--steel)"}
+            opacity={lane === 0 ? 0.9 : 0.7 - Math.min(lane, 8) * 0.05}
           >
             <title>{`${speakerLabel(t.speaker)} · ${fmtTime(t.start)}`}</title>
           </rect>

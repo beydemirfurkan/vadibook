@@ -35,9 +35,9 @@ export default async function EpisodePage({ params }: { params: Params }) {
   return (
     <div className="space-y-10">
       <header className="rise space-y-4">
-        <p className="font-mono text-[0.7rem] uppercase tracking-[0.14em] text-ink-3">{seriesName(ep.series)}</p>
-        <h1 className="font-display text-[2.4rem] leading-tight tracking-tight text-ink sm:text-5xl">{ep.no}. Bölüm</h1>
-        <dl className="flex flex-wrap gap-x-8 gap-y-2 font-mono text-[0.72rem] uppercase tracking-[0.12em] text-ink-2">
+        <p className="font-mono text-[0.7rem] uppercase tracking-[0.14em] text-fg-3">{seriesName(ep.series)}</p>
+        <h1 className="steel-text font-display text-[2.4rem] leading-tight sm:text-5xl">{ep.no}. Bölüm</h1>
+        <dl className="flex flex-wrap gap-x-8 gap-y-2 font-mono text-[0.72rem] uppercase tracking-[0.12em] text-fg-2">
           <Item k="Süre" v={fmtTime(ep.duration_sec)} />
           <Item k="Konuşma" v={nf.format(stats.utterances)} />
           <Item k="Diyalog" v={`${Math.round(stats.spokenSec / 60)} dk`} />
@@ -47,7 +47,7 @@ export default async function EpisodePage({ params }: { params: Params }) {
       </header>
 
       <section className="rise" style={{ animationDelay: "80ms" }}>
-        <div className="aspect-video w-full border border-rule bg-ink">
+        <div className="aspect-video w-full border border-line-2 bg-black shadow-[0_30px_60px_-30px_rgba(0,0,0,0.9)]">
           <iframe
             className="h-full w-full"
             src={`https://www.youtube-nocookie.com/embed/${ep.yt_id}`}
@@ -57,20 +57,20 @@ export default async function EpisodePage({ params }: { params: Params }) {
             loading="lazy"
           />
         </div>
-        <p className="mt-2 font-mono text-[0.68rem] uppercase tracking-[0.12em] text-ink-3">
+        <p className="mt-2 font-mono text-[0.68rem] uppercase tracking-[0.12em] text-fg-3">
           Resmi Pana Film yüklemesi · sesi ve görüntüyü biz barındırmıyoruz
         </p>
       </section>
 
       <section className="space-y-4 rise" style={{ animationDelay: "160ms" }}>
-        <h2 className="font-display text-2xl text-ink">Bu bölümde ara</h2>
+        <h2 className="steel-text font-display text-2xl">Bu Bölümde Ara</h2>
         <SearchBox series={ep.series} ep={ep.no} placeholder="bu bölümde geçen bir kelime…" />
       </section>
 
       <section className="space-y-4 rise" style={{ animationDelay: "240ms" }}>
         <div className="flex items-baseline justify-between">
-          <h2 className="font-display text-2xl text-ink">Kim ne zaman konuştu</h2>
-          <p className="font-mono text-[0.68rem] uppercase tracking-[0.12em] text-ink-3">
+          <h2 className="steel-text font-display text-2xl">Kim Ne Zaman Konuştu</h2>
+          <p className="font-mono text-[0.68rem] uppercase tracking-[0.12em] text-fg-3">
             en çok konuşan 12 · etiketler otomatik
           </p>
         </div>
@@ -79,16 +79,16 @@ export default async function EpisodePage({ params }: { params: Params }) {
         </div>
       </section>
 
-      <nav className="flex items-center justify-between border-t border-rule pt-4 font-mono text-[0.7rem] uppercase tracking-[0.12em]" aria-label="Bölümler arası">
+      <nav className="flex items-center justify-between border-t border-line pt-4 font-mono text-[0.7rem] uppercase tracking-[0.12em]" aria-label="Bölümler arası">
         {prev ? (
-          <Link href={episodeHref(prev.series, prev.no)} className="text-ink-2 hover:text-stamp">
+          <Link href={episodeHref(prev.series, prev.no)} className="text-fg-2 hover:text-moon">
             ← {prev.no}. Bölüm
           </Link>
         ) : (
           <span />
         )}
         {next ? (
-          <Link href={episodeHref(next.series, next.no)} className="text-ink-2 hover:text-stamp">
+          <Link href={episodeHref(next.series, next.no)} className="text-fg-2 hover:text-moon">
             {next.no}. Bölüm →
           </Link>
         ) : (
@@ -102,8 +102,8 @@ export default async function EpisodePage({ params }: { params: Params }) {
 function Item({ k, v }: { k: string; v: string }) {
   return (
     <div className="flex gap-2">
-      <dt className="text-ink-3">{k}</dt>
-      <dd className="text-ink tabular">{v}</dd>
+      <dt className="text-fg-3">{k}</dt>
+      <dd className="text-fg tabular">{v}</dd>
     </div>
   );
 }
