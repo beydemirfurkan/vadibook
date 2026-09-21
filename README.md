@@ -1,84 +1,51 @@
 # vadibook
 
-**Kurtlar Vadisi'nin 397 bölümündeki her konuşmayı arayın; resmi YouTube yüklemesinde tam o saniyeye gidin.**
+kurtlar vadisi'nin bütün bölümleri, aranabilir.
 
-Kurtlar Vadisi (97 bölüm) ve Kurtlar Vadisi Pusu (300 bölüm), Pana Film'in resmi YouTube kanallarından
-alınan sesle yerel makinede transkript edilir (faster-whisper), konuşmacılara ayrılır (sherpa-onnx +
-pyannote segmentation), kelime zamanlı hâle getirilir ve aranabilir bir arşiv olarak sunulur. Amaç:
-"dizide kim, kime, ne zaman, ne dedi?" sorusuna saniyeler içinde cevap vermek.
+397 bölüm. yüzbinlerce replik. bir isim yaz, bir cümle yaz, bir örgüt yaz; kim ne zaman demiş görürsün, tıklarsın, youtube'da tam o saniyeye gidersin.
 
-> Eylül 2026'da Silivri Cumhuriyet Başsavcılığı, bir soruşturma kapsamında dizinin 397 bölümünü bilirkişiye
-> inceletme kararı aldı. Bilirkişi aylarca inceleyecek; bu proje aynı 397 bölümü herkes için aranabilir yapar.
+![vadibook ana sayfa](docs/screenshots/anasayfa.jpg)
 
-## Nasıl çalışır
+## neden
 
-```
-resmi YouTube yüklemeleri
-   │ yt-dlp (yalnız ses)
-   ▼
-pipeline/   catalog → fetch → asr → diarize → align → build
-   │            data/private/  (gitignored: ses, transkript, sqlite — asla yayımlanmaz)
-   │            data/public/   (episodes.json, karakter sözlüğü, ses bankası etiketleri)
-   ▼
-Meilisearch (tam metin, sunucu içi)  ◄──  web/ Next.js  →  /ara  /bolum/pusu/17
-```
+eylül 2026'da savcılık, kurtlar vadisi'nin 397 bölümünü bilirkişiye inceletme kararı aldı. bilirkişi aylarca izleyecek, tutanak tutacak. biz dedik ki bu iş bir gece sürer, hem de herkese açık olur.
 
-- **Site tam transkript yayımlamaz.** Arama sonuçları ≤25 kelimelik kırpılmış alıntı + resmi YouTube
-  yüklemesine zaman damgalı derin link (`youtu.be/{id}?t={saniye}`) döner. `/api/search` tam metin alanını
-  hiç geri vermez; Meilisearch dış dünyaya kapalıdır.
-- Ses ve video barındırılmaz; bölüm sayfaları resmi embed'i gösterir.
-- Konuşmacı etiketleri otomatiktir ve hata içerebilir; karakter isimleri (Faz 3) topluluk düzeltmesiyle
-  iyileşir.
+bir de şu var: 2003'ten 2016'ya kadar bu dizi türkiye'nin gündemiyle beraber yürüdü. kim kimi nerede tehdit etti, hangi örgüt hangi bölümde ilk kez anıldı, "kaşifoğlu" adı ilk ne zaman geçti — bunları merak eden çok, bakacak yer yok. artık var.
 
-## Yasal not
+## nasıl
 
-Bu proje bir **kurgu eserin** diyaloglarını indeksler. Gerçek kişilere dair ifadeler dizi karakterlerine
-aittir; bu site hiçbir gerçek kişi hakkında olgu iddiasında bulunmaz. Dizi Pana Film'in eseridir; burada
-yalnızca resmi yüklemelere bağlantı verilir, metinlerin tamamı yayımlanmaz. Hak sahibiyseniz ve bir
-içeriğin kaldırılmasını istiyorsanız GitHub üzerinden issue açmanız yeterlidir.
+- bölümler pana film'in resmi youtube kanallarından alınıyor, sadece ses
+- ses yerel makinede whisper ile yazıya dökülüyor, kelime kelime zaman damgalı
+- konuşmacılar ayrıştırılıyor (kim ne zaman konuştu), sonra karakter isimleriyle eşleniyor
+- hepsi bir arama motoruna giriyor; sitede aradığını 3 saniyede buluyorsun
 
-## Yerelde çalıştırma
+![arama sonuçları](docs/screenshots/arama.jpg)
 
-```powershell
-# 1) pipeline (Python 3.12, uv, ffmpeg, NVIDIA GPU önerilir)
-cd pipeline
-uv sync --group dev
-uv run vadibook catalog                 # playlist → data/public/episodes.json
-uv run vadibook run --ep pusu/1         # fetch → asr → diarize → align (tek bölüm)
-uv run vadibook status
+her sonuç: seri, bölüm, dakika, konuşmacı, kısa bir alıntı ve resmi videoya giden zaman damgalı link. bölüm sayfalarında "kim ne zaman konuştu" çizelgesi var; dizide hangi karakterin ne kadar yer kapladığını bir bakışta görüyorsun.
 
-# 2) arama motoru
-cp deploy/.env.example deploy/.env      # MEILI_MASTER_KEY üret
-docker compose -f deploy/docker-compose.yml --env-file deploy/.env up -d
-uv run vadibook build --push --meili-key $env:MEILI_MASTER_KEY
+## sınırlar
 
-# 3) site
-cd web
-cp .env.example .env.local              # MEILI_SEARCH_KEY: deploy/README.md
-pnpm install && pnpm dev
-```
+transkriptlerin tamamı yayımlanmıyor, sadece aramada eşleşen kısa alıntılar gösteriliyor. ses ya da video barındırmıyoruz; her şey pana film'in kendi yüklemelerine gidiyor. yani dizinin sahibine trafik gidiyor, bize sadece arama.
 
-Ayrıntı: [`pipeline/README.md`](pipeline/README.md), [`deploy/README.md`](deploy/README.md).
-Tasarım kararları: [`docs/superpowers/specs/`](docs/superpowers/specs/), ölçümler:
-[`docs/superpowers/notes/`](docs/superpowers/notes/).
+dizi bir kurgu. içinde gerçek kişilere benzeyen karakterler var; onların söyledikleri karakterlere aittir, bu site kimse hakkında bir iddiada bulunmaz.
 
-## Durum
+konuşmacı etiketleri otomatik ve yer yer yanlış. karakter isimleri geldiğinde düzeltme düğmesi de gelecek.
 
-- [x] Faz 0 — spike: ASR/diarization parametreleri ölçüldü
-- [x] Faz 1 — 397 bölüm kataloglandı; ses + transkript üretimi arka planda
-- [x] Faz 2 — arama MVP (Next.js + Meilisearch)
-- [ ] Faz 3 — konuşmacı → karakter eşleme (ses bankası + LLM + topluluk)
-- [ ] Faz 4 — karakter/örgüt ilişki grafiği
-- [ ] Faz 5 — lansman
+## durum
 
-Bilinen sorun: 2003-05 dönemi (Kurtlar Vadisi) yüklemelerinde diarization aşırı birleştiriyor; Pusu
-tarafı sağlıklı. Bkz. `docs/superpowers/notes/`.
+- ses ve transkript üretimi sürüyor, 397 bölümün hepsi kataloglandı
+- site çalışıyor, canlı adres yakında
+- karakter isimleri (polat, memati, abdülhey…) bir sonraki adım
+- ilişki grafiği ve "dosya" sayfaları onun ardından
 
-## Katkı
+2003-05 dönemi bölümlerinde konuşmacı ayrıştırma henüz kötü; sesin kalitesi farklı. üzerinde çalışılıyor.
 
-Issue ve PR'lara açık. Konuşmacı etiketi düzeltmeleri `data/public/overrides/` üzerinden gelecek (Faz 3).
+## teknik
 
-## Lisans
+python, faster-whisper, sherpa-onnx, meilisearch, next.js. ayrıntı isteyen `pipeline/`, `web/` ve `docs/` altına baksın; kendin çalıştırmak istersen `pipeline/README.md` yeter.
 
-Kod: [MIT](LICENSE). `data/public/` altındaki türetilmiş yapısal veri: CC BY 4.0. Ses, video ve
-transkript metinleri bu repoda yer almaz ve dağıtılmaz.
+## lisans
+
+kod mit. `data/public/` altındaki bölüm kataloğu ve türetilmiş yapısal veri cc by 4.0. ses, video ve transkript metinleri bu repoda yok, dağıtılmıyor.
+
+hak sahibiyseniz ve bir şeyin kaldırılmasını istiyorsanız issue açmanız yeterli.

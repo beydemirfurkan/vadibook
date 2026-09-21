@@ -24,19 +24,41 @@ const plexMono = IBM_Plex_Mono({
   weight: ["400", "500"],
 });
 
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+
 export const metadata: Metadata = {
-  title: { default: "vadibook — Kurtlar Vadisi arşivi", template: "%s · vadibook" },
+  title: {
+    default: "vadibook — kurtlar vadisi ve pusu'nun bütün diyalogları, aranabilir",
+    template: "%s · vadibook",
+  },
   description:
-    "Kurtlar Vadisi'nin 397 bölümündeki her konuşmayı arayın, resmi YouTube yüklemesinde tam o saniyeye gidin.",
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"),
-  openGraph: { type: "website", locale: "tr_TR", siteName: "vadibook" },
+    "kurtlar vadisi ve kurtlar vadisi pusu'nun 397 bölümündeki her repliği ara; kim, hangi bölümde, kaçıncı dakikada demiş gör, resmi youtube yüklemesinde tam o saniyeye git.",
+  metadataBase: new URL(SITE_URL),
+  alternates: { canonical: "/" },
+  openGraph: { type: "website", locale: "tr_TR", siteName: "vadibook", url: SITE_URL },
   twitter: { card: "summary_large_image" },
+  robots: { index: true, follow: true },
+};
+
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  name: "vadibook",
+  url: SITE_URL,
+  inLanguage: "tr",
+  description: "kurtlar vadisi ve pusu'nun bütün bölümlerinin aranabilir diyalog arşivi",
+  potentialAction: {
+    "@type": "SearchAction",
+    target: { "@type": "EntryPoint", urlTemplate: `${SITE_URL}/ara?q={search_term_string}` },
+    "query-input": "required name=search_term_string",
+  },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="tr" className={`${cinzel.variable} ${cormorant.variable} ${plexMono.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col">
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
         <NightSky />
 
         <header className="border-b border-line bg-bg/40 backdrop-blur-sm">

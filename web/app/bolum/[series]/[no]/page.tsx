@@ -17,9 +17,12 @@ async function load(params: Params) {
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
   const ep = await load(params);
   if (!ep) return { title: "Bölüm bulunamadı" };
+  const name = seriesName(ep.series);
   return {
-    title: `${seriesName(ep.series)} ${ep.no}. Bölüm`,
-    description: `${seriesName(ep.series)} ${ep.no}. bölümün konuşmacı çizelgesi ve bölüm içi arama.`,
+    title: `${name} ${ep.no}. bölüm — kim ne zaman konuştu, bölüm içi arama`,
+    description: `${name} ${ep.no}. bölüm: konuşmacı zaman çizelgesi, bölümde geçen herhangi bir repliği ara, resmi youtube yüklemesinde tam o saniyeye git.`,
+    alternates: { canonical: `/bolum/${ep.series}/${ep.no}` },
+    openGraph: { title: `${name} ${ep.no}. bölüm · vadibook`, type: "video.episode" },
   };
 }
 

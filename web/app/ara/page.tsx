@@ -17,8 +17,15 @@ function parse(sp: SP) {
 }
 
 export async function generateMetadata({ searchParams }: Props): Promise<Metadata> {
-  const { q } = parse(await searchParams);
-  return { title: q ? `“${q}” için sonuçlar` : "Ara" };
+  const { q, series } = parse(await searchParams);
+  const where = series ? seriesName(series) : "kurtlar vadisi ve pusu";
+  return {
+    title: q ? `"${q}" — ${where} bölümlerinde nerede geçiyor` : "ara",
+    description: q
+      ? `"${q}" ifadesinin ${where} bölümlerinde geçtiği yerler: bölüm, dakika, konuşmacı ve resmi videoya zaman damgalı link.`
+      : "kurtlar vadisi ve pusu'nun bütün diyaloglarında ara.",
+    robots: q ? { index: false, follow: true } : undefined,
+  };
 }
 
 export default async function SearchPage({ searchParams }: Props) {
