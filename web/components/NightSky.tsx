@@ -1,6 +1,8 @@
 /**
- * Fixed, non-interactive backdrop: star field, moon, drifting clouds and a mountain silhouette.
- * Pure CSS + one inline SVG, no image assets.
+ * Fixed, non-interactive backdrop: star field, haloed moon, two rolling cloud decks (one lit by
+ * the moon, the moon itself riding above them), an original mountain silhouette and a
+ * counter-drifting ground fog.
+ * Pure CSS + inline SVG; the cloud textures are fractal-noise SVGs rasterised once.
  */
 export function NightSky() {
   return (
@@ -8,10 +10,10 @@ export function NightSky() {
       <div className="stars stars-3" />
       <div className="stars stars-2" />
       <div className="stars stars-1" />
+      <div className="deck deck-high" />
+      <div className="deck deck-mid" />
+      <div className="deck deck-lit" />
       <div className="moon" />
-      <div className="cloud cloud-1" />
-      <div className="cloud cloud-2" />
-      <div className="cloud cloud-3" />
       <svg className="mountains" viewBox="0 0 1440 320" preserveAspectRatio="none">
         <defs>
           <linearGradient id="ridge-far" x1="0" y1="0" x2="0" y2="1">
@@ -32,6 +34,7 @@ export function NightSky() {
           d="M0 290 L60 270 L130 285 L210 240 L290 275 L360 250 L450 280 L530 235 L610 270 L700 250 L790 285 L880 245 L960 275 L1050 255 L1140 290 L1230 260 L1320 285 L1440 265 L1440 320 L0 320 Z"
         />
       </svg>
+      <div className="fog" />
       <div className="haze" />
     </div>
   );

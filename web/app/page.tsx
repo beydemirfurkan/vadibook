@@ -22,9 +22,9 @@ export default function Home() {
       <section className="rise space-y-9 pt-10 sm:pt-20">
         <p className="badge">Bilirkişi aylarca inceleyecek · biz 3 saniyede</p>
         <h1 className="font-display text-[2.3rem] leading-[1.08] sm:text-[4.4rem]">
-          <span className="steel-text">397 Bölüm.</span> <span className="steel-text-accent">Her Cümle.</span>
+          <span className="steel-text steel-shine">397 Bölüm.</span> <span className="steel-text-accent">Her Cümle.</span>
           <br />
-          <span className="steel-text">Saniyesine Kadar.</span>
+          <span className="steel-text steel-shine">Saniyesine Kadar.</span>
         </h1>
         <p className="max-w-2xl font-body text-xl leading-relaxed text-fg-2">
           Kurtlar Vadisi ve Pusu&rsquo;nun bütün diyalogları, kim ne zaman söyledi bilgisiyle aranabilir.
