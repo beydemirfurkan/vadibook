@@ -81,9 +81,9 @@ vadibook/
 - Tahmin: ~700 saat ses × (large-v3 batched ~15-25× gerçek zaman) ≈ 30-45 saat GPU. Arka planda kuyruk olarak çalışır.
 
 ### 4. `diarize` — konuşmacı ayrıştırma
-- `pyannote/speaker-diarization-3.1` (HF token gerekli, gated model) → `data/private/diar/{ep}.json` (turn'ler: start, end, `SPEAKER_xx`).
-- Her yerel konuşmacı için ortalama embedding çıkar (`pyannote/wespeaker-voxceleb-resnet34-LM`) → `identify` aşamasında kullanılacak.
-- WhisperX yerine faster-whisper + pyannote doğrudan; bağımlılık kırılganlığından kaçınmak için hizalama kendi kodumuzda (~100 satır). WhisperX yedek seçenek.
+- **(Güncellendi 2026-09-21)** HF token gerektirmeyen, tamamen yerel backend: **sherpa-onnx** ile MIT lisanslı pyannote `segmentation-3.0` ONNX'i (k2-fsa dağıtımı) + WeSpeaker VoxCeleb ResNet34-LM embedding. Modeller ilk kullanımda `data/private/models/` altına iner. → `data/private/diar/{ep}.json` (turn'ler: start, end, `SPEAKER_xx`; konuşmacı başına 256-boyut embedding).
+- CPU'da çalışır (RTF ≈ 0.044, 16 thread), GPU'daki ASR ile paralel. Kümeleme eşiği 0.7; Faz 3'te ses bankasıyla ayarlanır.
+- WhisperX yerine faster-whisper + ayrı diarization; hizalama kendi kodumuzda (`align.py`).
 
 ### 5. `align` — birleştirme
 - Kelime bazında en çok örtüşen konuşmacıyı ata; konuşmacı değişiminde segmenti böl; aynı konuşmacının ardışık segmentlerini ≤30 sn'lik utterance'lara birleştir.

@@ -49,7 +49,24 @@ YouTube otomatik TR altyazısı: **var** (Pusu kanalı); KV 1-55 kanalında **yo
   karşılaştırmak gerekiyor.
 - Bash aracı heredoc içindeki `\\n`'i gerçek satır sonuna çeviriyor; dosya yazarken Write aracı ya da `chr(92)`.
 
+## Diarization (sherpa-onnx, token'sız)
+
+pyannote community-1 HF'de gated (token + form) olduğu için backend **sherpa-onnx**'a çevrildi: k2-fsa'nın
+dağıttığı MIT lisanslı pyannote `segmentation-3.0` ONNX'i + WeSpeaker VoxCeleb ResNet34-LM embedding (pyannote 3.1'in
+kendi modeli). Tamamen yerel, CPU (16 thread), GPU'daki ASR ile paralel.
+
+| Ölçüm | Değer |
+|---|---|
+| RTF (16 thread, CPU) | 0.044 (23×) — 88 dk bölüm 3.9 dk |
+| Kümeleme eşiği taraması (10 dk dilim) | 0.5→18, 0.65→8, 0.75→5, 0.85→4, 0.95→1 konuşmacı |
+| Seçilen eşik | **0.7** (pyannote 3.1'in bu embedding için ayarlı değeri; Faz 3 ses bankasıyla yeniden ölçülecek) |
+| pusu/1 sonucu | 35 konuşmacı (11'i ≥60 sn, 14'ü <10 sn gürültü kümesi), 541 utterance, 40.8 dk konuşma |
+| Embedding | 256-boyut, konuşmacı başına en uzun turn'lerden ≤60 sn ses, L2-normalize |
+| 397 bölüm tahmini | 592 sa × 0.044 ≈ **26 saat CPU** |
+
+Eşik 0.5 ile tek bölümde 109 konuşmacı çıkmıştı (aşırı bölme) — dead end.
+
 ## Bekleyen
 
-- Diarization (pyannote community-1) ölçümü: HF token gerekiyor. RTF ve konuşmacı sayısı buraya eklenecek.
-- İnsan kontrolü: diarization bitince 2-3 dk'lık bir kesitte konuşmacı sınırları ve isimler elle dinlenmeli.
+- İnsan kontrolü: `pusu/1` 20:00-22:00 arasındaki konuşmacı değişimleri YouTube'da dinlenip karşılaştırılmalı
+  (`utterances/pusu-001.jsonl`).

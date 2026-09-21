@@ -9,7 +9,7 @@ utterance'lara çevirir. Çıktılar `data/private/` altındadır ve **asla** re
 cd pipeline
 uv python install 3.12
 uv sync --group dev
-copy .env.example .env   # HF_TOKEN doldur (pyannote model koşullarını kabul et)
+copy .env.example .env   # opsiyonel (VADIBOOK_DATA); HF token GEREKMEZ
 $env:PYTHONUTF8 = "1"    # Türkçe konsol çıktısı için
 uv run python -c "import torch; print(torch.cuda.is_available())"   # True olmalı
 ```
@@ -42,6 +42,7 @@ bulunan bölümler (`kv/56`, `pusu/86`) `data/public/catalog_extra.json` ile ell
 
 - `Could not load library cudnn_ops64_9.dll` / cuBLAS hatası: `asr.py` torch'u önce import eder; hâlâ hata
   varsa `uv add nvidia-cudnn-cu12 nvidia-cublas-cu12` ve `os.add_dll_directory(<site-packages>/nvidia/cudnn/bin)`.
-- pyannote `torchcodec` import hatası: `diarize.py` sesi ffmpeg ile çözüp bellekten verir, torchcodec kullanılmaz;
-  import yine kırılıyorsa `uv add "pyannote-audio==3.3.2"` + `MODEL="pyannote/speaker-diarization-3.1"` (embedding'siz).
+- Diarization tamamen yerel: sherpa-onnx + MIT lisanslı pyannote `segmentation-3.0` ONNX'i + WeSpeaker ResNet34-LM
+  embedding modeli, ilk kullanımda `data/private/models/` altına GitHub release'lerinden iner (≈31 MB). CPU'da çalışır
+  (`NUM_THREADS` = çekirdek/2), GPU'daki ASR ile paralel gidebilir. Kümeleme eşiği `diarize.CLUSTER_THRESHOLD` (0.7).
 - YouTube 429 / throttling: `--sleep 15`, gerekirse `cookies`.
